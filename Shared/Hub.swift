@@ -50,6 +50,7 @@ struct Live: Decodable {
         let wwp_s: Double?
         let wwd: String?
         let water_f: Double?
+        let water_color: String?   // the wetsuit scale, cold blue to warm orange
         let age_min: Int?
     }
     struct Buoy: Decodable, Identifiable {

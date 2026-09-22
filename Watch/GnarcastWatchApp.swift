@@ -282,8 +282,13 @@ struct LiveView: View {
                 Text("swell \(trim(s.swh_ft)) @ \(whole(s.swp_s))s")
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
                     .lineLimit(1).minimumScaleFactor(0.6)
+                // The water reads at the same size as the sea and the swell, because it is the third
+                // thing worth knowing and not a caption on them. Its COLOUR is the wetsuit scale the
+                // hub computes (`waterColor` in server.js), cold blue to warm orange, so the number
+                // says how warm before it is read.
                 if let w = s.water_f {
-                    Text("\(whole(w))°").font(.system(size: 9)).foregroundStyle(.secondary)
+                    Text("\(whole(w))°").font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color(hex: s.water_color))
                 }
             }
             dayMark(l.day?.today == false).padding(.top, 4)
