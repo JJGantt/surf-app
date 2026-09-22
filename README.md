@@ -12,7 +12,9 @@ Its own product, so its own repo. It shares a backend with StatusHub rather than
 | live wind, surf alarm, the APIs this app reads | `status-hub/server` on Fly (`jared-status-hub`) |
 | the iPhone and watch apps | here |
 
-Bundle ids, registered: `com.jaredgantt.surf` (iPhone) and `com.jaredgantt.surf.watchkitapp`
-(watch, shipped inside the iPhone app, so one App Store Connect record covers both).
+**Gnarcast** in App Store Connect (app id `6814910411`, SKU `surf-app`). Bundle ids
+`com.jaredgantt.surf` (iPhone) and `com.jaredgantt.surf.watchkitapp` (the watch app, shipped inside
+the iPhone app, which is why one record covers both). TestFlight group `internal_main` has access to
+every build; a build uploaded with no group reaches no one.
 
 Open work is in [docs/TODO.md](docs/TODO.md).

@@ -2,12 +2,15 @@
 
 ## Blocked on Jared
 
-- **The App Store Connect app record.** The ASC API does not allow creating an app (`POST /v1/apps`
-  answers "does not allow CREATE"), so it is made by hand: Apps → + → New App, iOS, bundle id
-  `com.jaredgantt.surf`. No TestFlight upload can land until it exists.
 - **The buoy fetch.** Live swell from NDBC 41112 (Fernandina, ~22 mi N) and 41117 (St. Augustine,
   ~30 mi S): each posts every 30 minutes, about 15 minutes late, with the swell and wind-wave split in
   its `.spec` file. NDBC pushes nothing, so it is a timer — every 10 minutes proposed, not yet agreed.
+
+## TestFlight
+
+`internal_main` exists but is empty: adding the tester account through the API was refused
+("Tester(s) cannot be assigned") before the app had a build. Retry once the first build has
+processed; if it still refuses, it is one click in App Store Connect's TestFlight tab.
 
 ## Signing
 
