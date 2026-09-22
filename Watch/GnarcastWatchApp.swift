@@ -216,31 +216,31 @@ struct LiveView: View {
         .padding(.horizontal, 30)
     }
 
-    /// The middle: the wind now, then the sea under it. What is MEASURED is big. The wind's direction
-    /// is an ARROW pointing where it BLOWS, not the compass point it comes from — "ENE" has to be
-    /// turned around in your head before it means anything.
+    /// The middle: the wind now, then the sea under it. What is MEASURED is big, and it says as little
+    /// as it can. The direction is an ARROW pointing where the wind BLOWS, coloured green offshore,
+    /// amber cross, red onshore — so there is no word for it and no compass point to turn around in
+    /// your head. Age is a bare `4h` when the reading is old, and nothing at all when it is not.
     @ViewBuilder private func middle(_ l: Live) -> some View {
-        VStack(spacing: 1) {
+        VStack(spacing: 2) {
             if let w = l.wind {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(trim(w.kts)).font(.system(size: 34, weight: .bold, design: .rounded))
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("kt").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-                        if let to = w.dir_to {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 13, weight: .bold))
-                                .rotationEffect(.degrees(to))
-                                .foregroundStyle(Color(hex: w.type_color))
-                        }
+                HStack(alignment: .center, spacing: 5) {
+                    Text(trim(w.kts)).font(.system(size: 36, weight: .bold, design: .rounded))
+                    if let to = w.dir_to {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 20, weight: .bold))
+                            .rotationEffect(.degrees(to))
+                            .foregroundStyle(Color(hex: w.type_color))
                     }
                 }
-                Text(w.type ?? "").font(.system(size: 11, weight: .heavy)).foregroundStyle(Color(hex: w.type_color))
-                if let g = w.gust { Text("gust \(trim(g))").font(.system(size: 10)).foregroundStyle(.secondary) }
-                // Only when it is old enough to matter: the station goes quiet for hours at a time.
-                if let age = w.age_min, age > 30 {
-                    Text(age >= 120 ? "\(age / 60)h old" : "\(age)m old")
-                        .font(.system(size: 9, weight: .semibold)).foregroundStyle(.orange)
+                HStack(spacing: 5) {
+                    Text("kt").font(.system(size: 10, weight: .semibold))
+                    if let g = w.gust { Text("g\(whole(g))").font(.system(size: 10)) }
+                    if let age = w.age_min, age > 30 {
+                        Text(age >= 120 ? "\(age / 60)h" : "\(age)m")
+                            .font(.system(size: 10, weight: .semibold)).foregroundStyle(.orange)
+                    }
                 }
+                .foregroundStyle(.secondary)
             }
             if let s = l.sea {
                 Divider().padding(.horizontal, 30).padding(.vertical, 1)
