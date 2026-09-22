@@ -207,12 +207,16 @@ struct LiveView: View {
 
     /// WHICH DAY THE RING IS. The spoke only exists on today's, so once the ring has moved on to
     /// tomorrow — which it does at 6pm — something has to say so or the missing spoke reads as a fault.
-    /// It goes in the middle column and nowhere else: at the top of the screen it lands under the bands
-    /// and across the noon numbers, which is where it was cut in half.
+    ///
+    /// It labels the RING and nothing else, which decides where it can go. The middle is MEASURED — the
+    /// wind, the sea and the water as they are right now — whatever day the ring is showing, so a line
+    /// sitting over that block claims those numbers are tomorrow's. Under the block it is a footnote to
+    /// the face; over it, it is a lie. The top of the screen is no good either: there it lands under the
+    /// bands and across the noon numbers and is cut in half.
     @ViewBuilder private func dayMark(_ tomorrow: Bool) -> some View {
         if tomorrow {
             Text("tomorrow").font(.system(size: 9, weight: .heavy))
-                .foregroundStyle(.secondary).textCase(.uppercase)
+                .foregroundStyle(.tertiary).textCase(.uppercase)
         }
     }
 
@@ -247,7 +251,6 @@ struct LiveView: View {
     /// your head. Age is a bare `4h` when the reading is old, and nothing at all when it is not.
     @ViewBuilder private func middle(_ l: Live) -> some View {
         VStack(spacing: 2) {
-            dayMark(l.day?.today == false)
             if let w = l.wind {
                 HStack(alignment: .center, spacing: 5) {
                     Text(trim(w.kts)).font(.system(size: 36, weight: .bold, design: .rounded))
@@ -283,6 +286,7 @@ struct LiveView: View {
                     Text("\(whole(w))°").font(.system(size: 9)).foregroundStyle(.secondary)
                 }
             }
+            dayMark(l.day?.today == false).padding(.top, 4)
         }
         // Inside the bands: the dial owns the edge, and a line that runs under it is unreadable on both.
         .padding(.horizontal, 26)
