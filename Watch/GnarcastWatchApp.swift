@@ -39,37 +39,61 @@ final class Model: ObservableObject {
 
 // ---- the dial ---------------------------------------------------------------------------------------
 
-/// THE FORECAST AROUND THE RIM, where a watch already puts hours: each of the next twelve hours is a
-/// segment at its own clock position, coloured by its rating, with a tick at the time now. The middle
-/// holds what is happening this minute, so the whole thing is one glance and never scrolls.
-struct Dial: View {
-    let hours: [Live.Hour]
+/// THE DAY AROUND THE SCREEN'S OWN EDGE. The watch is a rounded square, not a circle, so the band is
+/// twelve stretches of that border rather than a ring drawn inside it. It is not a clock either: the
+/// whole way round is 6am to 6pm — 6am at the BOTTOM, up the left side, noon at the TOP, down the
+/// right to 6pm back at the bottom — because those twelve hours are the day worth surfing. A mark
+/// shows the time now while it is inside that window. The middle is left for the live readings, and
+/// nothing scrolls.
+struct EdgeDial: View {
+    let day: Live.Day
+    var inset: CGFloat = 3
+    var width: CGFloat = 8
 
     var body: some View {
-        Canvas { ctx, size in
-            let side = min(size.width, size.height)
-            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
-            let radius = side / 2 - 4
-            let width: CGFloat = 7
-            for h in hours.prefix(12) {
-                // 12 at the top, each hour 30 degrees round, with a gap left between segments.
-                let slot = Double((h.h % 12 + 12) % 12)
-                let start = Angle(degrees: slot * 30 - 90 - 13)
-                let end = Angle(degrees: slot * 30 - 90 + 13)
-                var arc = Path()
-                arc.addArc(center: centre, radius: radius - width / 2, startAngle: start, endAngle: end, clockwise: false)
-                ctx.stroke(arc, with: .color(Color(hex: h.color)), style: StrokeStyle(lineWidth: width, lineCap: .round))
+        GeometryReader { geo in
+            let rect = CGRect(origin: .zero, size: geo.size).insetBy(dx: inset + width / 2, dy: inset + width / 2)
+            let radius = min(rect.width, rect.height) * 0.30
+            let ring = Self.border(rect, radius)
+            Canvas { ctx, _ in
+                let gap = 0.005          // a hair between hours, so twelve stretches read as twelve
+                for h in day.hours where h.h >= 6 && h.h < 18 {
+                    let slot = CGFloat(h.h - 6)
+                    let seg = ring.trimmedPath(from: slot / 12 + gap, to: (slot + 1) / 12 - gap)
+                    ctx.stroke(seg, with: .color(Color(hex: h.color)),
+                               style: StrokeStyle(lineWidth: width, lineCap: .butt))
+                }
+                guard day.today else { return }
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: Date())
+                let hour = Double(parts.hour ?? 0) + Double(parts.minute ?? 0) / 60
+                guard hour >= 6, hour < 18 else { return }
+                let f = CGFloat((hour - 6) / 12)
+                let notch = ring.trimmedPath(from: max(0, f - 0.003), to: min(1, f + 0.003))
+                ctx.stroke(notch, with: .color(.white), style: StrokeStyle(lineWidth: width + 5, lineCap: .butt))
             }
-            // Now: a tick inside the ring, at the fraction of the hour actually elapsed.
-            let parts = Calendar.current.dateComponents([.hour, .minute], from: Date())
-            let mins = Double((parts.hour ?? 0) % 12) * 60 + Double(parts.minute ?? 0)
-            let a = Angle(degrees: mins / 720 * 360 - 90).radians
-            let inner = radius - width - 3, outer = radius - width + 1
-            var tick = Path()
-            tick.move(to: CGPoint(x: centre.x + cos(a) * inner, y: centre.y + sin(a) * inner))
-            tick.addLine(to: CGPoint(x: centre.x + cos(a) * outer, y: centre.y + sin(a) * outer))
-            ctx.stroke(tick, with: .color(.white), style: StrokeStyle(lineWidth: 2, lineCap: .round))
         }
+    }
+
+    /// The border drawn from BOTTOM CENTRE, clockwise — so 6am starts at the bottom and noon lands at
+    /// the top. The corner radius is the screen's, near enough that the band keeps the same distance
+    /// from the bezel along the straights and round the corners.
+    static func border(_ r: CGRect, _ radius: CGFloat) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.midX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + radius, y: r.maxY))
+        p.addArc(center: CGPoint(x: r.minX + radius, y: r.maxY - radius), radius: radius,
+                 startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        p.addLine(to: CGPoint(x: r.minX, y: r.minY + radius))
+        p.addArc(center: CGPoint(x: r.minX + radius, y: r.minY + radius), radius: radius,
+                 startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        p.addLine(to: CGPoint(x: r.maxX - radius, y: r.minY))
+        p.addArc(center: CGPoint(x: r.maxX - radius, y: r.minY + radius), radius: radius,
+                 startAngle: .degrees(270), endAngle: .degrees(360), clockwise: false)
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY - radius))
+        p.addArc(center: CGPoint(x: r.maxX - radius, y: r.maxY - radius), radius: radius,
+                 startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        p.closeSubpath()
+        return p
     }
 }
 
@@ -81,7 +105,7 @@ struct LiveView: View {
     var body: some View {
         ZStack {
             if let l = model.live {
-                Dial(hours: l.hours)
+                if let d = l.day { EdgeDial(day: d) }
                 middle(l)
             } else if model.loading {
                 ProgressView()
@@ -127,7 +151,7 @@ struct LiveView: View {
                     .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
             }
         }
-        // Inside the ring: the dial owns the rim, and a line that runs under it is unreadable on both.
-        .frame(maxWidth: 118)
+        // Inside the band: the dial owns the edge, and a line that runs under it is unreadable on both.
+        .padding(.horizontal, 26)
     }
 }

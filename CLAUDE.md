@@ -16,12 +16,14 @@ Colours, labels, compass points, the hours strip. The apps lay values out and ne
 same rule status-hub works by, and for the same reason: two surfaces that each do their own arithmetic
 end up disagreeing about the same number.
 
-## The watch is a dial, and it does not scroll
+## The watch is the day around the screen's edge, and it does not scroll
 
-The forecast's next twelve hours are segments at their own clock positions around the rim, with a tick
-at the time now; the middle is the measured wind and the sea. Two rules hold it together: everything
-fits one screen, and nothing but the dial touches the rim — text that runs under the ring is
-unreadable on both. The middle is width-capped for that reason, not by eye.
+The band follows the SCREEN'S OWN rounded-square border (`EdgeDial`), not a circle inscribed in it —
+a circle wastes the corners and stops short of the bezel. It is not a clock either: the whole way
+round is 6am to 6pm, 6am at the bottom, up the left, noon at the top, down the right to 6pm, because
+that is the day worth surfing. The hub sends exactly those hours (`day` in `surfLive`), today's until
+6pm and tomorrow's after. The middle is the measured wind and the sea; nothing but the band touches
+the edge, because text under it is unreadable on both.
 
 Check it in the simulator rather than guessing, which takes about a minute:
 

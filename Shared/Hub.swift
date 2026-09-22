@@ -80,7 +80,15 @@ struct Live: Decodable {
         let hMin: Double?
         let hMax: Double?
     }
+    /// The surfable day the watch draws round the screen's edge: 6am to 6pm, today's until 6pm and
+    /// tomorrow's after that.
+    struct Day: Decodable {
+        let date: String
+        let today: Bool
+        let hours: [Hour]
+    }
     let wind: Wind?
+    let day: Day?
     let sea: Sea?
     let buoys: [Buoy]
     let hours: [Hour]
