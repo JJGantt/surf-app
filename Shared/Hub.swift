@@ -71,6 +71,8 @@ struct Live: Decodable {
         let rating: String
         let color: String       // the rating's band colour
         let size_color: String? // wave height, on the heat map's own blue scale
+        let wind_label: String? // signed: offshore positive, onshore negative, cross-shore neither
+        let wind_color: String?
         let ft: String?
         var id: String { t }
     }

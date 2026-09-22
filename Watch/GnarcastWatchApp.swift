@@ -52,8 +52,8 @@ final class Model: ObservableObject {
 struct EdgeDial: View {
     let day: Live.Day
     var inset: CGFloat = 3
-    var width: CGFloat = 7
-    var sizeWidth: CGFloat = 4
+    var width: CGFloat = 4          // the rating band
+    var sizeWidth: CGFloat = 4      // wave height, on the heat map's blue
     var between: CGFloat = 1.5
 
     var body: some View {
@@ -63,6 +63,9 @@ struct EdgeDial: View {
             let ring = Self.border(rect, radius)
             let inner = rect.insetBy(dx: width / 2 + between + sizeWidth / 2, dy: width / 2 + between + sizeWidth / 2)
             let sizeRing = Self.border(inner, max(2, radius - width / 2 - between - sizeWidth / 2))
+            // Where the numbers sit: inside both bands, far enough in that nothing touches them.
+            let numbers = inner.insetBy(dx: sizeWidth / 2 + 11, dy: sizeWidth / 2 + 11)
+            let numberRing = Self.border(numbers, max(2, radius - width - between - sizeWidth - 11))
             Canvas { ctx, _ in
                 let gap = 0.005          // a hair between hours, so twelve stretches read as twelve
                 for h in day.hours where h.h >= 6 && h.h < 18 {
@@ -74,6 +77,17 @@ struct EdgeDial: View {
                         let s = sizeRing.trimmedPath(from: slot / 12 + gap, to: (slot + 1) / 12 - gap)
                         ctx.stroke(s, with: .color(Color(hex: sc)), style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
                     }
+                }
+                // THE WIND, WRITTEN rather than shaded: a signed number inside the bands at each hour —
+                // offshore positive, onshore negative — because a colour cannot carry a sign, and the
+                // sign is half of what wind means. Coloured as the middle readout colours it.
+                for h in day.hours where h.h >= 6 && h.h < 18 {
+                    guard let label = h.wind_label else { continue }
+                    let mid = (CGFloat(h.h - 6) + 0.5) / 12
+                    let p = numberRing.trimmedPath(from: max(0, mid - 0.0005), to: min(1, mid + 0.0005))
+                    guard let at = p.currentPoint else { continue }
+                    ctx.draw(Text(label).font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color(hex: h.wind_color)), at: at)
                 }
                 guard day.today else { return }
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: Date())
@@ -113,49 +127,21 @@ struct EdgeDial: View {
 
 struct LiveView: View {
     @ObservedObject var model: Model
-    /// WET MODE: the screen stops answering touches, so a wave running over it cannot press anything,
-    /// while DOUBLE TAP still works — Apple's own Water Lock disables that too. Turned on by holding
-    /// the screen, off by double tap (or another long press, for a watch without the gesture).
-    ///
-    /// It cannot stop watchOS's OWN gestures: a wet screen can still pull down Notification Centre or
-    /// swipe the app away, and only Water Lock blocks those. Use both — Water Lock for the paddle out,
-    /// this for when the answer has to be one gesture away.
-    @State private var wet = false
 
     var body: some View {
         ZStack {
-            Group {
-                if let l = model.live {
-                    if let d = l.day { EdgeDial(day: d) }
-                    middle(l)
-                } else if model.loading {
-                    ProgressView()
-                } else {
-                    Image(systemName: "wifi.exclamationmark").font(.title2).foregroundStyle(.secondary)
-                }
+            if let l = model.live {
+                if let d = l.day { EdgeDial(day: d) }
+                middle(l)
+            } else if model.loading {
+                ProgressView()
+            } else {
+                Image(systemName: "wifi.exclamationmark").font(.title2).foregroundStyle(.secondary)
             }
-            .allowsHitTesting(!wet)
-            if wet {
-                VStack {
-                    Image(systemName: "drop.fill").font(.system(size: 11)).foregroundStyle(.cyan)
-                    Spacer()
-                }
-                .padding(.top, 2)
-                .allowsHitTesting(false)
-            }
-            // THE DOUBLE-TAP TARGET, one point across and all but invisible: the gesture needs a
-            // primary action to fire, and water cannot press what has no area. It refreshes normally,
-            // and leaves wet mode when wet mode is on.
-            Button { wet ? (wet = false) : model.refresh() } label: { Color.clear.frame(width: 1, height: 1) }
-                .buttonStyle(.plain)
-                .handGestureShortcut(.primaryAction)
         }
         .ignoresSafeArea()
         .contentShape(Rectangle())
-        // A tap is ignored in wet mode — that is the whole point of it. The long press stays, so a
-        // watch with no double tap is never stuck in it.
-        .onTapGesture { if !wet { model.refresh() } }
-        .onLongPressGesture(minimumDuration: 0.6) { wet.toggle() }
+        .onTapGesture { model.refresh() }
     }
 
     /// The middle: the wind now, then the sea under it. What is MEASURED is big; the forecast for the

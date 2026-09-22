@@ -22,8 +22,14 @@ The band follows the SCREEN'S OWN rounded-square border (`EdgeDial`), not a circ
 a circle wastes the corners and stops short of the bezel. It is not a clock either: the whole way
 round is 6am to 6pm, 6am at the bottom, up the left, noon at the top, down the right to 6pm, because
 that is the day worth surfing. The hub sends exactly those hours (`day` in `surfLive`), today's until
-6pm and tomorrow's after. The middle is the measured wind and the sea; nothing but the band touches
-the edge, because text under it is unreadable on both.
+6pm and tomorrow's after. Three layers, outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, and the
+WIND written as a signed number at each hour — offshore positive, onshore negative, cross-shore
+neither, coloured as the middle readout colours it. The wind is written rather than shaded because a
+colour cannot carry a sign, and the sign is half of what wind means. The middle is the measured wind
+and the sea; nothing but the bands touch the edge, because text under them is unreadable on both.
+
+Water Lock is Apple's, not ours: an app can stop its own touches but not watchOS's gestures, so a
+half-measure inside the app was worse than the real thing (it cost double tap; Apple support 108413).
 
 Check it in the simulator rather than guessing, which takes about a minute:
 
