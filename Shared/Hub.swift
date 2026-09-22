@@ -66,7 +66,8 @@ struct Live: Decodable {
         var id: String { station }
     }
     struct Hour: Decodable, Identifiable {
-        let t: String
+        let t: String          // the label a strip prints: "3p"
+        let h: Int             // the clock hour, 0-23: where a dial puts it
         let rating: String
         let color: String
         let ft: String?
@@ -93,6 +94,12 @@ extension Color {
         if let h = hex, h.hasPrefix("#"), let n = UInt64(h.dropFirst(), radix: 16) { v = n }
         self.init(red: Double((v >> 16) & 0xff) / 255, green: Double((v >> 8) & 0xff) / 255, blue: Double(v & 0xff) / 255)
     }
+}
+
+/// Rounded whole, for a figure where a decimal is noise.
+func whole(_ v: Double?) -> String {
+    guard let v else { return "—" }
+    return String(Int(v.rounded()))
 }
 
 /// One decimal, and no ".0".

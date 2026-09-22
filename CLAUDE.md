@@ -16,6 +16,22 @@ Colours, labels, compass points, the hours strip. The apps lay values out and ne
 same rule status-hub works by, and for the same reason: two surfaces that each do their own arithmetic
 end up disagreeing about the same number.
 
+## The watch is a dial, and it does not scroll
+
+The forecast's next twelve hours are segments at their own clock positions around the rim, with a tick
+at the time now; the middle is the measured wind and the sea. Two rules hold it together: everything
+fits one screen, and nothing but the dial touches the rim — text that runs under the ring is
+unreadable on both. The middle is width-capped for that reason, not by eye.
+
+Check it in the simulator rather than guessing, which takes about a minute:
+
+    xcrun simctl boot <watch udid>            # xcrun simctl list devices available | grep Watch
+    xcodebuild -project Gnarcast.xcodeproj -scheme GnarcastWatch -destination "id=<udid>" \
+      -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+    xcrun simctl install <udid> build/Build/Products/Debug-watchsimulator/GnarcastWatch.app
+    xcrun simctl launch <udid> com.jaredgantt.surf.watchkitapp
+    xcrun simctl io <udid> screenshot /tmp/watch.png
+
 ## Builds
 
 `tools/testflight.sh` from this Mac, first. `.github/workflows/testflight.yml` is the backup for when
