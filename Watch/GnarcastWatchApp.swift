@@ -46,7 +46,7 @@ struct LiveView: View {
                     rating(l)
                     if let w = l.wind { wind(w) }
                     hours(l.hours)
-                    ForEach(l.buoys) { buoy($0) }
+                    if let s = l.sea { sea(s) }
                 }
             } else if model.loading {
                 ProgressView()
@@ -106,19 +106,23 @@ struct LiveView: View {
         }
     }
 
-    private func buoy(_ b: Live.Buoy) -> some View {
+    /// One sea, blended from the buoys either side of the spot, and the water temperature under it.
+    private func sea(_ s: Live.Sea) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack {
-                Text(b.name).font(.caption.bold()).foregroundStyle(.secondary)
+                Text("Sea").font(.caption.bold()).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
-                if let a = b.age_min { Text("\(a)m").font(.caption2).foregroundStyle(.secondary) }
+                if let a = s.age_min { Text("\(a)m").font(.caption2).foregroundStyle(.secondary) }
             }
-            Text("\(trim(b.wvht_ft)) ft @ \(trim(b.dpd_s))s \(b.mwd_compass ?? "")").font(.body.bold())
-            if let s = b.swh_ft {
-                Text("\(Image(systemName: "water.waves")) \(trim(s)) @ \(trim(b.swp_s))s \(b.swd ?? "")").font(.caption)
+            Text("\(trim(s.wvht_ft)) ft @ \(trim(s.dpd_s))s \(s.mwd_compass ?? "")").font(.body.bold())
+            if s.swh_ft != nil {
+                Text("\(Image(systemName: "water.waves")) \(trim(s.swh_ft)) @ \(trim(s.swp_s))s \(s.swd ?? "")").font(.caption)
             }
-            if let w = b.wwh_ft {
-                Text("\(Image(systemName: "wind")) \(trim(w)) @ \(trim(b.wwp_s))s").font(.caption).foregroundStyle(.secondary)
+            if s.wwh_ft != nil {
+                Text("\(Image(systemName: "wind")) \(trim(s.wwh_ft)) @ \(trim(s.wwp_s))s").font(.caption).foregroundStyle(.secondary)
+            }
+            if let w = s.water_f {
+                Text("\(Image(systemName: "thermometer.medium")) \(trim(w))°").font(.caption).foregroundStyle(.secondary)
             }
         }
     }

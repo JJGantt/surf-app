@@ -36,6 +36,21 @@ struct Live: Decodable {
         let type: String?
         let type_color: String?
     }
+    /// The two buoys blended into one sea for Mayport, which sits between them (status-hub
+    /// lib/livebuoy.js). What to read; the buoys themselves are the detail behind it.
+    struct Sea: Decodable {
+        let wvht_ft: Double?
+        let dpd_s: Double?
+        let mwd_compass: String?
+        let swh_ft: Double?
+        let swp_s: Double?
+        let swd: String?
+        let wwh_ft: Double?
+        let wwp_s: Double?
+        let wwd: String?
+        let water_f: Double?
+        let age_min: Int?
+    }
     struct Buoy: Decodable, Identifiable {
         let station: String
         let name: String
@@ -65,6 +80,7 @@ struct Live: Decodable {
         let hMax: Double?
     }
     let wind: Wind?
+    let sea: Sea?
     let buoys: [Buoy]
     let hours: [Hour]
     let surf: Surf?
