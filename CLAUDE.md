@@ -41,8 +41,9 @@ now. A long press hides the numbers for the bands alone.
 The middle is the measured wind and the sea, and the wind's direction is an ARROW pointing where it
 BLOWS (`dir_to` in the feed) — a compass point has to be turned around in your head first. The water
 temperature reads at the same size as the sea and swell lines and in its own colour (`water_color`,
-the wetsuit scale from cold blue to warm orange, computed by `waterColor` in the hub); the `/surf`
-page's Water card draws the same number the same way. Nothing but the bands touches the edge, because
+cold blue to warm orange, computed by `waterColor` in the hub and spread across the 51-88F Mayport
+itself runs rather than a generic wetsuit chart's range); the `/surf` page's Water card draws the
+same number the same way. Nothing but the bands touches the edge, because
 text under them is unreadable on both.
 
 THE MIDDLE IS LIVE WHATEVER DAY THE RING IS. The spoke exists only on today's ring, so once the ring
