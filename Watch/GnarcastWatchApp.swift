@@ -113,20 +113,49 @@ struct EdgeDial: View {
 
 struct LiveView: View {
     @ObservedObject var model: Model
+    /// WET MODE: the screen stops answering touches, so a wave running over it cannot press anything,
+    /// while DOUBLE TAP still works — Apple's own Water Lock disables that too. Turned on by holding
+    /// the screen, off by double tap (or another long press, for a watch without the gesture).
+    ///
+    /// It cannot stop watchOS's OWN gestures: a wet screen can still pull down Notification Centre or
+    /// swipe the app away, and only Water Lock blocks those. Use both — Water Lock for the paddle out,
+    /// this for when the answer has to be one gesture away.
+    @State private var wet = false
 
     var body: some View {
         ZStack {
-            if let l = model.live {
-                if let d = l.day { EdgeDial(day: d) }
-                middle(l)
-            } else if model.loading {
-                ProgressView()
-            } else {
-                Image(systemName: "wifi.exclamationmark").font(.title2).foregroundStyle(.secondary)
+            Group {
+                if let l = model.live {
+                    if let d = l.day { EdgeDial(day: d) }
+                    middle(l)
+                } else if model.loading {
+                    ProgressView()
+                } else {
+                    Image(systemName: "wifi.exclamationmark").font(.title2).foregroundStyle(.secondary)
+                }
             }
+            .allowsHitTesting(!wet)
+            if wet {
+                VStack {
+                    Image(systemName: "drop.fill").font(.system(size: 11)).foregroundStyle(.cyan)
+                    Spacer()
+                }
+                .padding(.top, 2)
+                .allowsHitTesting(false)
+            }
+            // THE DOUBLE-TAP TARGET, one point across and all but invisible: the gesture needs a
+            // primary action to fire, and water cannot press what has no area. It refreshes normally,
+            // and leaves wet mode when wet mode is on.
+            Button { wet ? (wet = false) : model.refresh() } label: { Color.clear.frame(width: 1, height: 1) }
+                .buttonStyle(.plain)
+                .handGestureShortcut(.primaryAction)
         }
         .ignoresSafeArea()
-        .onTapGesture { model.refresh() }
+        .contentShape(Rectangle())
+        // A tap is ignored in wet mode — that is the whole point of it. The long press stays, so a
+        // watch with no double tap is never stuck in it.
+        .onTapGesture { if !wet { model.refresh() } }
+        .onLongPressGesture(minimumDuration: 0.6) { wet.toggle() }
     }
 
     /// The middle: the wind now, then the sea under it. What is MEASURED is big; the forecast for the
