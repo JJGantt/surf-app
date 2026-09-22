@@ -1,5 +1,8 @@
 # Build Gnarcast (the iPhone app, with the watch app inside it) and upload it to TestFlight, from a
-# borrowed Mac. Adapted from status-hub's ios-testflight.yml; the reasons behind each step are there too.
+# rented Mac. THE BACKUP: tools/testflight.sh does the same build on Jared's Mac and is the first path;
+# this is for when that Mac is away. Adapted from status-hub's ios-testflight.yml, whose comments give
+# the reasons behind each step. The build number is the UTC time (YYYYMMDD.HHMM), the same as the
+# local script's, so a build from either is always higher than the last one from both.
 #
 # This is the only part of the stack that genuinely cannot run on the Pi — Xcode is macOS-only — so
 # GitHub rents a real Mac for it. Nothing about it needs Jared's laptop.
@@ -103,9 +106,9 @@ jobs:
       - name: Generate the Xcode project
         run: brew install xcodegen >/dev/null && xcodegen generate
 
-      # TestFlight rejects a build number it has already seen, and project.yml pins
-      # CURRENT_PROJECT_VERSION to "1". The run number is monotonic per workflow, so it can never
-      # collide with itself — overriding here rather than editing the file keeps the repo clean.
+      # TestFlight rejects a build number that is not higher than the last, and project.yml pins
+      # CURRENT_PROJECT_VERSION to "1". The UTC time is the number, as in tools/testflight.sh: a run
+      # number would restart below whatever the Mac last uploaded.
       - name: Archive
         run: |
           xcodebuild -project Gnarcast.xcodeproj -scheme Gnarcast \
@@ -116,7 +119,7 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CURRENT_PROJECT_VERSION="$(date -u +%Y%m%d.%H%M)" \
             archive 2>&1 | tail -40
 
       - name: Export the ipa

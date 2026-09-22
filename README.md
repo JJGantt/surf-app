@@ -32,15 +32,21 @@ it out.
 
 ## Building
 
-This Mac cannot build for a device (Xcode 26 without the device platforms), but it can build the whole
-thing for the simulator, which proves the plists, the icon and the watch embedding:
+**Build on the Mac first.** `tools/testflight.sh` archives, signs and uploads to TestFlight from
+Jared's Mac in about three minutes. It signs from a dedicated keychain,
+`~/Library/Keychains/gnarcast-build.keychain-db` (password in
+`~/.appstoreconnect/private_keys/gnarcast-build-keychain.password`), which holds the distribution and
+development identities and is unlocked by the script, so nothing prompts; profiles come from the App
+Store Connect API key, not an Xcode account login. The simulator build proves the plists, the icon and
+the watch embedding without signing anything:
 
     xcodegen generate
     xcodebuild -project Gnarcast.xcodeproj -scheme Gnarcast -destination 'generic/platform=iOS Simulator' \
       -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
-A build for his phone comes from `.github/workflows/testflight.yml` (manual dispatch, or an `ios-*` tag).
-It signs with this repo's OWN distribution certificate (secrets `IOS_DIST_P12` /
+**The backup** is `.github/workflows/testflight.yml` (manual dispatch, or an `ios-*` tag), the same
+build on a rented Mac for when his is away. GitHub bills macOS minutes at ten times Linux's against
+the free allowance. It signs with this repo's OWN distribution certificate (secrets `IOS_DIST_P12` /
 `IOS_DIST_P12_PASSWORD`, local copy `~/.appstoreconnect/private_keys/gnarcast-distribution.p12`,
 expires 2027-09-22) and the account's one development certificate (`IOS_DEV_P12`, shared with
 status-hub): with no development identity in the runner's keychain, automatic signing mints a new one
