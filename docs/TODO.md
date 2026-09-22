@@ -1,11 +1,5 @@
 # Open work
 
-## TestFlight
-
-`internal_main` exists but is empty: adding the tester account through the API was refused
-("Tester(s) cannot be assigned") before the app had a build. Retry once the first build has
-processed; if it still refuses, it is one click in App Store Connect's TestFlight tab.
-
 ## The short-term model
 
 Surfline's model covers days and is hours stale by morning (the 5am forecast is the 8pm run). The
