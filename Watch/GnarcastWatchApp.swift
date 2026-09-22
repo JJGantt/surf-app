@@ -67,16 +67,21 @@ struct EdgeDial: View {
             let numRect = inner.insetBy(dx: sizeWidth / 2 + 13, dy: sizeWidth / 2 + 13)
             let numberRing = Self.border(numRect, max(2, radius - width - between - sizeWidth - 13))
             Canvas { ctx, _ in
-                let gap = 0.005          // a hair between hours, so twelve stretches read as twelve
+                // EACH HOUR IS CENTRED ON ITS OWN MARK: 6am sits at the bottom, 3pm a quarter of the
+                // way back up the right, and the segment straddles it by half an hour either side. Laid
+                // out as blocks BETWEEN the marks instead, the 3pm number would sit at half past three
+                // while the spoke — which is the real clock — pointed at three.
+                let gap = 0.004          // a hair between hours, so twelve stretches read as twelve
                 for h in day.hours where h.h >= 6 && h.h < 18 {
                     let slot = CGFloat(h.h - 6)
-                    let seg = ring.trimmedPath(from: slot / 12 + gap, to: (slot + 1) / 12 - gap)
-                    ctx.stroke(seg, with: .color(Color(hex: h.color)),
-                               style: StrokeStyle(lineWidth: width, lineCap: .butt))
-                    if let sc = h.size_color {
-                        let band = sizeRing.trimmedPath(from: slot / 12 + gap, to: (slot + 1) / 12 - gap)
-                        ctx.stroke(band, with: .color(Color(hex: sc)),
-                                   style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
+                    let from = (slot - 0.5) / 12, to = (slot + 0.5) / 12
+                    for (a, b) in Self.wrapped(from + gap, to - gap) {
+                        ctx.stroke(ring.trimmedPath(from: a, to: b), with: .color(Color(hex: h.color)),
+                                   style: StrokeStyle(lineWidth: width, lineCap: .butt))
+                        if let sc = h.size_color {
+                            ctx.stroke(sizeRing.trimmedPath(from: a, to: b), with: .color(Color(hex: sc)),
+                                       style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
+                        }
                     }
                 }
 
@@ -97,7 +102,7 @@ struct EdgeDial: View {
 
                 guard numbers else { return }
                 for h in day.hours where h.h >= 6 && h.h < 18 {
-                    let mid = (CGFloat(h.h - 6) + 0.5) / 12
+                    let mid = CGFloat(h.h - 6) / 12
                     let p = numberRing.trimmedPath(from: max(0, mid - 0.0005), to: min(1, mid + 0.0005))
                     guard let point = p.currentPoint else { continue }
                     if let ft = h.ft_exact {
@@ -113,6 +118,14 @@ struct EdgeDial: View {
                 }
             }
         }
+    }
+
+    /// A span that may run off either end of the path, as the 6am segment does — half of it belongs to
+    /// the last of the ring and half to the first.
+    static func wrapped(_ from: CGFloat, _ to: CGFloat) -> [(CGFloat, CGFloat)] {
+        if from < 0 { return [(0, max(0, to)), (1 + from, 1)] }
+        if to > 1 { return [(min(1, from), 1), (0, to - 1)] }
+        return [(from, to)]
     }
 
     /// The border drawn from BOTTOM CENTRE, clockwise — so 6am starts at the bottom and noon lands at
@@ -165,7 +178,7 @@ struct LiveView: View {
                              numbers: showNumbers)
                 }
                 if let h = scrubbed, let hour = l.day?.hours.first(where: { $0.h == h }) {
-                    forecast(hour)
+                    forecast(hour, tomorrow: l.day?.today == false)
                 } else {
                     middle(l)
                 }
@@ -192,10 +205,22 @@ struct LiveView: View {
         .onLongPressGesture(minimumDuration: 0.5) { showNumbers.toggle() }
     }
 
+    /// WHICH DAY THE RING IS. The spoke only exists on today's, so once the ring has moved on to
+    /// tomorrow — which it does at 6pm — something has to say so or the missing spoke reads as a fault.
+    /// It goes in the middle column and nowhere else: at the top of the screen it lands under the bands
+    /// and across the noon numbers, which is where it was cut in half.
+    @ViewBuilder private func dayMark(_ tomorrow: Bool) -> some View {
+        if tomorrow {
+            Text("tomorrow").font(.system(size: 9, weight: .heavy))
+                .foregroundStyle(.secondary).textCase(.uppercase)
+        }
+    }
+
     /// One hour of the FORECAST, while the crown is on it. Dim where the live middle is bright: none of
     /// this is measured.
-    @ViewBuilder private func forecast(_ h: Live.Hour) -> some View {
+    @ViewBuilder private func forecast(_ h: Live.Hour, tomorrow: Bool) -> some View {
         VStack(spacing: 2) {
+            dayMark(tomorrow)
             Text(h.t).font(.system(size: 13, weight: .heavy)).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(h.ft_exact.map { String(format: "%.1f", $0) } ?? "—")
@@ -222,6 +247,7 @@ struct LiveView: View {
     /// your head. Age is a bare `4h` when the reading is old, and nothing at all when it is not.
     @ViewBuilder private func middle(_ l: Live) -> some View {
         VStack(spacing: 2) {
+            dayMark(l.day?.today == false)
             if let w = l.wind {
                 HStack(alignment: .center, spacing: 5) {
                     Text(trim(w.kts)).font(.system(size: 36, weight: .bold, design: .rounded))
@@ -244,12 +270,18 @@ struct LiveView: View {
             }
             if let s = l.sea {
                 Divider().padding(.horizontal, 30).padding(.vertical, 1)
-                // Periods and the water rounded whole: a tenth of a second is not a decision, and the
-                // line has to fit across the ring's narrower lower half.
-                Text("\(trim(s.wvht_ft)) ft @ \(whole(s.dpd_s))s")
+                // THE SAME SIZE, both of them. The sea is how big and the swell is how good — two
+                // questions, not a headline and a footnote — and the swell is only dimmer because the
+                // sea is the number that becomes the wave. Periods whole: a tenth of a second is not a
+                // decision, and the line has to fit across the ring's narrower lower half.
+                Text("sea \(trim(s.wvht_ft)) @ \(whole(s.dpd_s))s")
                     .font(.system(size: 12, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.6)
-                Text("swell \(trim(s.swh_ft)) @ \(whole(s.swp_s))s · \(whole(s.water_f))°")
-                    .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
+                Text("swell \(trim(s.swh_ft)) @ \(whole(s.swp_s))s")
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                if let w = s.water_f {
+                    Text("\(whole(w))°").font(.system(size: 9)).foregroundStyle(.secondary)
+                }
             }
         }
         // Inside the bands: the dial owns the edge, and a line that runs under it is unreadable on both.
