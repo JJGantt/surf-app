@@ -25,6 +25,7 @@ struct Live: Decodable {
         let kts: Double?
         let gust: Double?
         let compass: String?
+        let dir_to: Double?     // where the wind blows TO, for an arrow
         let type: String?
         let type_color: String?
         let age_min: Int?
@@ -71,7 +72,11 @@ struct Live: Decodable {
         let rating: String
         let color: String       // the rating's band colour
         let size_color: String? // wave height, on the heat map's own blue scale
-        let wind_label: String? // signed: offshore positive, onshore negative, cross-shore neither
+        let ft_exact: Double?   // the aggregate that breaks, to a decimal — the range is coarse
+        let swh_ft: Double?
+        let swp_s: Double?
+        let wind_kts: Double?
+        let wind_type: String?
         let wind_color: String?
         let ft: String?
         var id: String { t }
