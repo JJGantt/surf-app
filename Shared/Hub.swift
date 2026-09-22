@@ -66,10 +66,11 @@ struct Live: Decodable {
         var id: String { station }
     }
     struct Hour: Decodable, Identifiable {
-        let t: String          // the label a strip prints: "3p"
-        let h: Int             // the clock hour, 0-23: where a dial puts it
+        let t: String           // the label a strip prints: "3p"
+        let h: Int              // the clock hour, 0-23: where a dial puts it
         let rating: String
-        let color: String
+        let color: String       // the rating's band colour
+        let size_color: String? // wave height, on the heat map's own blue scale
         let ft: String?
         var id: String { t }
     }

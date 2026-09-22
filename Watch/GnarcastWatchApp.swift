@@ -45,16 +45,24 @@ final class Model: ObservableObject {
 /// right to 6pm back at the bottom — because those twelve hours are the day worth surfing. A mark
 /// shows the time now while it is inside that window. The middle is left for the live readings, and
 /// nothing scrolls.
+///
+/// TWO BANDS, the same pair the heat map draws: the rating outside, the wave HEIGHT just inside it on
+/// the heat map's own blue scale, so a colour means the same size in both places (the hub sends both,
+/// `color` and `size_color`).
 struct EdgeDial: View {
     let day: Live.Day
     var inset: CGFloat = 3
-    var width: CGFloat = 8
+    var width: CGFloat = 7
+    var sizeWidth: CGFloat = 4
+    var between: CGFloat = 1.5
 
     var body: some View {
         GeometryReader { geo in
             let rect = CGRect(origin: .zero, size: geo.size).insetBy(dx: inset + width / 2, dy: inset + width / 2)
             let radius = min(rect.width, rect.height) * 0.30
             let ring = Self.border(rect, radius)
+            let inner = rect.insetBy(dx: width / 2 + between + sizeWidth / 2, dy: width / 2 + between + sizeWidth / 2)
+            let sizeRing = Self.border(inner, max(2, radius - width / 2 - between - sizeWidth / 2))
             Canvas { ctx, _ in
                 let gap = 0.005          // a hair between hours, so twelve stretches read as twelve
                 for h in day.hours where h.h >= 6 && h.h < 18 {
@@ -62,6 +70,10 @@ struct EdgeDial: View {
                     let seg = ring.trimmedPath(from: slot / 12 + gap, to: (slot + 1) / 12 - gap)
                     ctx.stroke(seg, with: .color(Color(hex: h.color)),
                                style: StrokeStyle(lineWidth: width, lineCap: .butt))
+                    if let sc = h.size_color {
+                        let s = sizeRing.trimmedPath(from: slot / 12 + gap, to: (slot + 1) / 12 - gap)
+                        ctx.stroke(s, with: .color(Color(hex: sc)), style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
+                    }
                 }
                 guard day.today else { return }
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: Date())
