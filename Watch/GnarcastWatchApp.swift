@@ -1,5 +1,4 @@
 import SwiftUI
-import WatchConnectivity
 
 @main
 struct GnarcastWatchApp: App {
@@ -15,61 +14,23 @@ struct GnarcastWatchApp: App {
     }
 }
 
-// ---- the token and the feed -------------------------------------------------------------------------
+// ---- the feed ---------------------------------------------------------------------------------------
 
-/// The watch has no password of its own: the phone hands over the hub token (App/GnarcastApp.swift,
-/// WatchLink) as application context, and the watch asks for it with a message when it has none.
-/// The feed is read when the app comes to the front — there is no timer; the page on the phone is the
-/// live view, this is the glance.
+/// Read when the app comes to the front. No timer, and nothing to sign in to: the hub serves the surf
+/// feed publicly. The phone's page is the live view; this is the glance.
 @MainActor
-final class Model: NSObject, ObservableObject, WCSessionDelegate {
+final class Model: ObservableObject {
     @Published var live: Live?
     @Published var failed = false
     @Published var loading = false
 
-    private var token: String? {
-        get { UserDefaults.standard.string(forKey: "hubToken").flatMap { $0.isEmpty ? nil : $0 } }
-        set { UserDefaults.standard.set(newValue, forKey: "hubToken") }
-    }
-
-    override init() {
-        super.init()
-        if WCSession.isSupported() {
-            WCSession.default.delegate = self
-            WCSession.default.activate()
-        }
-    }
-
     func refresh() {
-        guard let t = token else { askPhone(); return }
         loading = true
         Task {
-            do { live = try await Hub.live(token: t); failed = false }
+            do { live = try await Hub.live(); failed = false }
             catch { failed = true }
             loading = false
         }
-    }
-
-    private func askPhone() {
-        let s = WCSession.default
-        guard s.activationState == .activated, s.isReachable else { return }
-        s.sendMessage(["want": "hubToken"], replyHandler: { reply in
-            let t = reply["hubToken"] as? String
-            Task { @MainActor in self.token = t; if t?.isEmpty == false { self.refresh() } }
-        }, errorHandler: nil)
-    }
-
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
-        let t = session.receivedApplicationContext["hubToken"] as? String
-        Task { @MainActor in
-            if let t { self.token = t }
-            self.refresh()
-        }
-    }
-
-    nonisolated func session(_ session: WCSession, didReceiveApplicationContext context: [String: Any]) {
-        let t = context["hubToken"] as? String
-        Task { @MainActor in self.token = t; self.refresh() }
     }
 }
 
@@ -90,7 +51,7 @@ struct LiveView: View {
             } else if model.loading {
                 ProgressView()
             } else {
-                Image(systemName: model.failed ? "wifi.exclamationmark" : "iphone.and.arrow.forward")
+                Image(systemName: "wifi.exclamationmark")
                     .font(.title2).foregroundStyle(.secondary).padding(.top, 30)
             }
         }

@@ -1,36 +1,19 @@
 import Foundation
-import CryptoKit
 import SwiftUI
 
-// The hub on Fly is this app's backend: the surf page, the live feed, the sign-in check.
-//
-// The hub knows one password. Its token is sha256("status-hub:" + password) in hex — the same value
-// its web cookie `hub` holds and its API accepts as the X-Hub-Token header — so the password is typed
-// once, kept in the Keychain on the phone, and the token is derived from it.
+// The hub on Fly is this app's backend. Its surf page and surf feeds are PUBLIC (status-hub
+// server.js, PUBLIC_SURF) — a forecast, the measured wind and the buoys, nothing personal — so
+// there is no password here, no token and nothing to sign in to.
 enum Hub {
     static let host = "https://jared-status-hub.fly.dev"
 
-    static func token(for password: String) -> String {
-        SHA256.hash(data: Data(("status-hub:" + password).utf8)).map { String(format: "%02x", $0) }.joined()
-    }
-
-    /// True when the hub accepts this token.
-    static func check(token: String) async -> Bool {
-        guard let url = URL(string: host + "/api/surf/live") else { return false }
-        var req = URLRequest(url: url)
-        req.setValue(token, forHTTPHeaderField: "X-Hub-Token")
-        guard let (_, resp) = try? await URLSession.shared.data(for: req) else { return false }
-        return (resp as? HTTPURLResponse)?.statusCode == 200
-    }
-
-    /// The live feed — what the watch draws. The page on the phone reads the same payload as a stream.
-    static func live(token: String) async throws -> Live {
+    /// The live feed — what the watch draws. The phone shows the page, which streams the same payload.
+    static func live() async throws -> Live {
         guard let url = URL(string: host + "/api/surf/live") else { throw URLError(.badURL) }
         var req = URLRequest(url: url)
-        req.setValue(token, forHTTPHeaderField: "X-Hub-Token")
         req.cachePolicy = .reloadIgnoringLocalCacheData
         let (data, resp) = try await URLSession.shared.data(for: req)
-        guard (resp as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.userAuthenticationRequired) }
+        guard (resp as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
         return try JSONDecoder().decode(Live.self, from: data)
     }
 }
