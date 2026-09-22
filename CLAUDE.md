@@ -29,6 +29,11 @@ while the raw numbers climb 1.5, 1.6, 1.5 through it. Swell PERIOD is not drawn 
 median of one second across a daylight day here, and 10-12s and 12-20s hours rate the same, so twelve
 of them would be one number written twelve times.
 
+EACH HOUR IS CENTRED ON ITS OWN MARK — its band segment straddles that mark by half an hour either
+side, which makes 6am's wrap the path's start and end (`EdgeDial.wrapped` splits it). Laid out as
+blocks BETWEEN the marks instead, 3pm's band and its numbers sit at half past three while the spoke,
+which is the real clock, points at three.
+
 THE CROWN SCRUBS the day: the spoke moves to an hour and the middle shows that hour's forecast,
 letting go after eight seconds, because a watch left on 9am at four in the afternoon is lying about
 now. A long press hides the numbers for the bands alone.
@@ -36,6 +41,12 @@ now. A long press hides the numbers for the bands alone.
 The middle is the measured wind and the sea, and the wind's direction is an ARROW pointing where it
 BLOWS (`dir_to` in the feed) — a compass point has to be turned around in your head first. Nothing but
 the bands touches the edge, because text under them is unreadable on both.
+
+THE MIDDLE IS LIVE WHATEVER DAY THE RING IS. The spoke exists only on today's ring, so once the ring
+is tomorrow's — from 6pm — a `tomorrow` label says so, or the missing spoke reads as a fault. It goes
+UNDER the live block: over it, it claims the measured wind and sea are tomorrow's, which they never
+are. On a scrubbed hour it heads the block instead, because there everything on screen is the ring's
+day.
 
 Water Lock is Apple's, not ours: an app can stop its own touches but not watchOS's gestures, so a
 half-measure inside the app was worse than the real thing (it cost double tap; Apple support 108413).
