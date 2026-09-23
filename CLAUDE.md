@@ -38,7 +38,13 @@ TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY — today out to t
 — and the ring redraws for it. A horizontal SWIPE picks what the MIDDLE says, and nothing else:
 the live readings, or every day at once as a grid. Either pane works on any day, because the two
 never touch. A swipe rather than a `TabView`: the crown is already bound to this view and watchOS's
-paging styles want it for themselves. A long press hides the edge numbers for the bands alone; a tap
+paging styles want it for themselves.
+
+WHERE IT OPENS AND WHERE NOW IS BOTH COME FROM THE HUB (`open_day`, `now_hour`), never from the
+device. `Calendar.current` on the watch is the PHONE's timezone, so a spoke placed locally lands on
+the wrong hour the moment he travels. `open_day` is today until 6pm and the next day after: opening
+on today at 11pm is a ring of twelve hours that are entirely past, with no spoke anywhere on it —
+correct data and the wrong day to be looking at. A long press hides the edge numbers for the bands alone; a tap
 refreshes and goes back to today, which is also where a refresh lands, because opening the app asks
 about now.
 

@@ -103,6 +103,11 @@ struct Live: Decodable {
     }
     let wind: Wind?
     let days: [Day]
+    /// The break's own clock, not the device's: which day to open on (today until 6pm, the next day
+    /// after) and where now falls in the ring. `Calendar.current` is the PHONE's timezone, so a spoke
+    /// placed from the device lands on the wrong hour the moment he travels.
+    let open_day: Int?
+    let now_hour: Double?
     let generated_at: String?
     let sea: Sea?
     let buoys: [Buoy]

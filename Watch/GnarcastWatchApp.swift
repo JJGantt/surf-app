@@ -166,11 +166,6 @@ struct LiveView: View {
     /// The numbers round the edge, on by default; a long press puts them away for the bands alone.
     @AppStorage("showNumbers") private var showNumbers = true
 
-    private var nowHour: Double {
-        let p = Calendar.current.dateComponents([.hour, .minute], from: Date())
-        return Double(p.hour ?? 0) + Double(p.minute ?? 0) / 60
-    }
-
     var body: some View {
         let days = model.live?.days ?? []
         let i = min(day, max(0, days.count - 1))
@@ -180,7 +175,7 @@ struct LiveView: View {
                 // words, and a label is the wrong instrument for it whatever it says: a word anywhere
                 // near the middle is read as qualifying those numbers. A clock hand pointing at no
                 // hour already means these are not the hours you are in.
-                EdgeDial(day: days[i], at: days[i].today ? nowHour : nil, numbers: showNumbers)
+                EdgeDial(day: days[i], at: days[i].today ? l.now_hour : nil, numbers: showNumbers)
                 if pane == 1 {
                     grid(days, selected: i)
                 } else if days[i].today {
@@ -211,9 +206,17 @@ struct LiveView: View {
         })
         // Back to today, because opening the app asks about now. The crown goes with it or the next
         // click resumes from wherever it was left days ago.
-        .onTapGesture { day = 0; crown = 0; model.refresh() }
-        .onChange(of: model.live?.generated_at) { _, _ in day = 0; crown = 0 }
+        .onTapGesture { open(model.live); model.refresh() }
+        .onChange(of: model.live?.generated_at) { _, _ in open(model.live) }
         .onLongPressGesture(minimumDuration: 0.5) { showNumbers.toggle() }
+    }
+
+    /// Where the crown lands on a fresh read: the hub's `open_day`, which is today until 6pm and the
+    /// next day after. Opening on today at 11pm is a ring of twelve hours that are entirely past, with
+    /// no spoke anywhere on it — correct data and the wrong day to be looking at.
+    private func open(_ l: Live?) {
+        let i = l?.open_day ?? 0
+        day = i; crown = Double(i)
     }
 
     /// A DAY THAT IS NOT TODAY, in the live block's place: how big, how good, and the wind, all of it
