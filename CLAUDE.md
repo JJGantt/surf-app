@@ -29,6 +29,13 @@ while the raw numbers climb 1.5, 1.6, 1.5 through it. Swell PERIOD is not drawn 
 median of one second across a daylight day here, and 10-12s and 12-20s hours rate the same, so twelve
 of them would be one number written twelve times.
 
+THE DAY'S BOUNDARY IS DRAWN, and it is not at bottom centre. Every other gap in the ring is the half
+hour between two hours; one of them is the join between the LAST hour and the FIRST, and that is where
+the day begins and ends. Hours are centred on their own marks, so that join sits half an hour
+clockwise of bottom centre — putting it ON bottom centre would mean moving every hour off its mark.
+A white radial tick marks it and a sunrise sits immediately clockwise of the tick, which is the
+morning side: the side the day runs towards.
+
 EACH HOUR IS CENTRED ON ITS OWN MARK — its band segment straddles that mark by half an hour either
 side, which makes 6am's wrap the path's start and end (`EdgeDial.wrapped` splits it). Laid out as
 blocks BETWEEN the marks instead, 3pm's band and its numbers sit at half past three while the spoke,
@@ -57,9 +64,14 @@ about now.
 
 THE GRID PANE is the hub's own heat map turned to fit a square screen — a day per COLUMN, an hour
 per row with 6am at the top: the rating band, the height band under it on the same blue, and the
-water across the same columns, each segment in its own day's colour. The crown's day is marked by a
-line straight down its column through all three, and that mark is the only thing tying this pane to
-the crown, since the ring is out behind the numbers at the edge.
+water across the same columns, each segment in its own day's colour. Each column is headed by its
+weekday letter with today's in full white, because ten unlabelled columns are a picture of nothing in
+particular and the reader cannot otherwise tell where the grid starts.
+
+THE CROWN'S DAY IS OUTLINED, NOT STRUCK THROUGH. A line down the middle of a column covers the cells
+it is pointing at and reads as an artefact of the drawing; a box round the column says selected and
+leaves every cell visible. That box is the only thing tying this pane to the crown, since the ring is
+out behind the numbers at the edge.
 
 `days` is ONE array and it is both the ring and the grid, so the two cannot disagree about a day.
 

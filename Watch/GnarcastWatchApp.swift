@@ -85,6 +85,28 @@ struct EdgeDial: View {
                     }
                 }
 
+                // THE DAY'S BOUNDARY. Every other gap in the ring is a half-hour between two hours;
+                // this one is the join between the LAST hour and the FIRST, and it is the only place
+                // the ring begins. It falls half an hour clockwise of bottom centre rather than on it,
+                // and that is not a compromise: hours are centred on their own marks, so putting the
+                // join at bottom centre would mean moving every hour off its mark. The sun sits on the
+                // morning side of it — the side the day runs towards.
+                let seam = CGFloat(11.5) / 12
+                if let p = ring.trimmedPath(from: seam - 0.0005, to: seam + 0.0005).currentPoint {
+                    let c = CGPoint(x: rect.midX, y: rect.midY)
+                    let v = CGPoint(x: p.x - c.x, y: p.y - c.y)
+                    var tick = Path()
+                    tick.move(to: CGPoint(x: c.x + v.x * 1.05, y: c.y + v.y * 1.05))
+                    tick.addLine(to: CGPoint(x: c.x + v.x * 0.88, y: c.y + v.y * 0.88))
+                    ctx.stroke(tick, with: .color(.white), style: StrokeStyle(lineWidth: 2, lineCap: .butt))
+                }
+                // Immediately clockwise of the join, which is the morning side. Far enough from the
+                // first hour's own numbers not to crowd them, close enough to the tick to belong to it.
+                if let p = numberRing.trimmedPath(from: seam + 0.012, to: seam + 0.013).currentPoint {
+                    ctx.draw(Text(Image(systemName: "sunrise.fill")).font(.system(size: 8))
+                                .foregroundColor(.orange), at: p)
+                }
+
                 // The hour in question: a spoke from just outside the rating band inward past the
                 // numbers, drawn BEFORE them so a number is never covered by it.
                 if let hour = at, hour >= 6, hour < 18 {
@@ -265,13 +287,22 @@ struct LiveView: View {
         Canvas { ctx, size in
             let n = max(1, days.count), gap: CGFloat = 1
             let cw = (size.width - CGFloat(n - 1) * gap) / CGFloat(n)
-            let waterH: CGFloat = 20, between: CGFloat = 4
-            let bandH = (size.height - waterH - between * 2) / 2
+            let headH: CGFloat = 11, waterH: CGFloat = 20, between: CGFloat = 4
+            let bandH = (size.height - headH - waterH - between * 2) / 2
             let ch = bandH / 12
             let x = { (i: Int) in CGFloat(i) * (cw + gap) }
+            // A COLUMN IS A DAY and needs saying: ten unlabelled columns are a picture of nothing in
+            // particular. One letter each, and today's in full white — where the grid starts is the
+            // other thing a reader cannot work out from the colours.
+            for (i, d) in days.enumerated() {
+                let l = String(Self.weekday(d.date).prefix(1))
+                ctx.draw(Text(l).font(.system(size: 8, weight: d.today ? .heavy : .semibold))
+                            .foregroundColor(d.today ? .white : .secondary),
+                         at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
+            }
             for (i, d) in days.enumerated() {
                 for h in d.hours where h.h >= 6 && h.h < 18 {
-                    let y = CGFloat(h.h - 6) * ch
+                    let y = headH + CGFloat(h.h - 6) * ch
                     ctx.fill(Path(CGRect(x: x(i), y: y, width: cw, height: ch)),
                              with: .color(Color(hex: h.color)))
                     if let sc = h.size_color {
@@ -283,7 +314,7 @@ struct LiveView: View {
             // THE WATER, one point a day over the same columns, each segment in its own day's colour
             // so the line reads warm or cold without a scale beside it. It stops where the marine
             // model does, a few days short of the surf forecast.
-            let top = bandH * 2 + between * 2
+            let top = headH + bandH * 2 + between * 2
             let vals = days.map(\.water_f)
             let known = vals.compactMap { $0 }
             if known.count > 1 {
@@ -298,15 +329,17 @@ struct LiveView: View {
                                style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 }
             }
-            // The crown's day, straight down the middle of its column and through everything.
+            // THE CROWN'S DAY IS OUTLINED, NOT STRUCK THROUGH. A line down the middle of a column
+            // covers the cells it is pointing at and reads as an artefact of the drawing; a box round
+            // the column says selected and leaves every cell visible.
             if days.indices.contains(selected) {
-                var p = Path()
-                p.move(to: CGPoint(x: x(selected) + cw / 2, y: 0))
-                p.addLine(to: CGPoint(x: x(selected) + cw / 2, y: size.height))
-                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: 1.5))
+                let r = CGRect(x: x(selected) - 1, y: headH - 1, width: cw + 2,
+                               height: size.height - headH + 1)
+                ctx.stroke(Path(roundedRect: r, cornerRadius: 2), with: .color(.white),
+                           style: StrokeStyle(lineWidth: 1.5))
             }
         }
-        .frame(width: 118, height: 116)
+        .frame(width: 118, height: 126)
     }
 
     /// Surfline's own order, worst to best, for picking a day's best hour.
