@@ -21,8 +21,8 @@ end up disagreeing about the same number.
 The band follows the SCREEN'S OWN rounded-square border (`EdgeDial`), not a circle inscribed in it —
 a circle wastes the corners and stops short of the bezel. It is not a clock either: the whole way
 round is 6am to 6pm, 6am at the bottom, up the left, noon at the top, down the right to 6pm, because
-that is the day worth surfing. The hub sends exactly those hours (`day` in `surfLive`), today's until
-6pm and tomorrow's after. Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
+that is the day worth surfing. The hub sends every day of the forecast (`days` in `surfLive`), each
+one those twelve hours, plus that day's water at local noon for the grid pane's plot. Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
 hour — the height that breaks, to a decimal, and the wind, bare because its colour is its direction.
 The exact height earns its place because Surfline's range is coarse: a whole morning reads `1-2 ft`
 while the raw numbers climb 1.5, 1.6, 1.5 through it. Swell PERIOD is not drawn per hour — it moves a
@@ -34,9 +34,21 @@ side, which makes 6am's wrap the path's start and end (`EdgeDial.wrapped` splits
 blocks BETWEEN the marks instead, 3pm's band and its numbers sit at half past three while the spoke,
 which is the real clock, points at three.
 
-THE CROWN SCRUBS the day: the spoke moves to an hour and the middle shows that hour's forecast,
-letting go after eight seconds, because a watch left on 9am at four in the afternoon is lying about
-now. A long press hides the numbers for the bands alone.
+TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY — today out to the end of the forecast
+— and the ring redraws for it. A horizontal SWIPE picks what the MIDDLE says, and nothing else:
+the live readings, or every day at once as a grid. Either pane works on any day, because the two
+never touch. A swipe rather than a `TabView`: the crown is already bound to this view and watchOS's
+paging styles want it for themselves. A long press hides the edge numbers for the bands alone; a tap
+refreshes and goes back to today, which is also where a refresh lands, because opening the app asks
+about now.
+
+THE GRID PANE is the hub's own heat map turned to fit a square screen — a day per COLUMN, an hour
+per row with 6am at the top: the rating band, the height band under it on the same blue, and the
+water across the same columns, each segment in its own day's colour. The crown's day is marked by a
+line straight down its column through all three, and that mark is the only thing tying this pane to
+the crown, since the ring is out behind the numbers at the edge.
+
+`days` is ONE array and it is both the ring and the grid, so the two cannot disagree about a day.
 
 The middle is the measured wind and the sea, and the wind's direction is an ARROW pointing where it
 BLOWS (`dir_to` in the feed) — a compass point has to be turned around in your head first. There is

@@ -153,14 +153,16 @@ struct EdgeDial: View {
 
 // ---- the glance -------------------------------------------------------------------------------------
 
+/// TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY: the ring round the edge redraws
+/// for it and the middle says what that day is. A horizontal SWIPE picks what the middle says —
+/// the live readings, or the whole forecast as a grid. Neither touches the other, so you can be on
+/// Thursday in either pane and on either pane for any day.
 struct LiveView: View {
     @ObservedObject var model: Model
-    /// The crown scrubs the day: the spoke moves to an hour and the middle shows that hour's forecast.
-    /// It lets go by itself after a few seconds, because a watch left on 9am at four in the afternoon
-    /// is lying about what is happening now.
-    @State private var crown: Double = 6
-    @State private var scrubbed: Int?
-    @State private var idle: Task<Void, Never>?
+    @State private var crown: Double = 0
+    @State private var day = 0
+    /// 0 the live readings, 1 the grid of every day.
+    @State private var pane = 0
     /// The numbers round the edge, on by default; a long press puts them away for the bands alone.
     @AppStorage("showNumbers") private var showNumbers = true
 
@@ -170,23 +172,23 @@ struct LiveView: View {
     }
 
     var body: some View {
+        let days = model.live?.days ?? []
+        let i = min(day, max(0, days.count - 1))
         ZStack {
-            if let l = model.live {
-                // NO SPOKE ACROSS ANY HOUR IS WHAT SAYS THE RING IS TOMORROW'S — from 6pm, when the
-                // day it draws rolls over. Nothing writes it in words, and a label is the wrong
-                // instrument for it whatever it says: the middle is measured and LIVE whatever day
-                // the ring is, so a word placed anywhere near it is read as qualifying those
-                // numbers. A clock hand pointing at no hour already means these are not the hours
-                // you are in.
-                if let d = l.day {
-                    EdgeDial(day: d,
-                             at: scrubbed.map(Double.init) ?? (d.today ? nowHour : nil),
-                             numbers: showNumbers)
-                }
-                if let h = scrubbed, let hour = l.day?.hours.first(where: { $0.h == h }) {
-                    forecast(hour)
-                } else {
+            if let l = model.live, !days.isEmpty {
+                // NO SPOKE ACROSS ANY HOUR IS WHAT SAYS THE RING IS NOT TODAY'S. Nothing writes it in
+                // words, and a label is the wrong instrument for it whatever it says: a word anywhere
+                // near the middle is read as qualifying those numbers. A clock hand pointing at no
+                // hour already means these are not the hours you are in.
+                EdgeDial(day: days[i], at: days[i].today ? nowHour : nil, numbers: showNumbers)
+                if pane == 1 {
+                    grid(days, selected: i)
+                } else if days[i].today {
                     middle(l)
+                } else {
+                    // A day that has not happened has nothing measured in it, so the live block is
+                    // not an option: what stands in its place is that day's own forecast.
+                    summary(days[i])
                 }
             } else if model.loading {
                 ProgressView()
@@ -197,42 +199,124 @@ struct LiveView: View {
         .ignoresSafeArea()
         .contentShape(Rectangle())
         .focusable()
-        .digitalCrownRotation($crown, from: 6, through: 17, by: 1, sensitivity: .low,
-                              isContinuous: false, isHapticFeedbackEnabled: true)
-        .onChange(of: crown) { _, v in
-            scrubbed = Int(v.rounded())
-            idle?.cancel()
-            idle = Task {
-                try? await Task.sleep(for: .seconds(8))
-                if !Task.isCancelled { scrubbed = nil }
-            }
-        }
-        .onTapGesture { scrubbed = nil; model.refresh() }
+        .digitalCrownRotation($crown, from: 0, through: Double(max(1, days.count - 1)), by: 1,
+                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+        .onChange(of: crown) { _, v in day = Int(v.rounded()) }
+        // A swipe, not a TabView: the crown is already bound here, and watchOS's paging styles want
+        // it for themselves.
+        .gesture(DragGesture(minimumDistance: 18).onEnded { g in
+            guard abs(g.translation.width) > abs(g.translation.height),
+                  abs(g.translation.width) > 28 else { return }
+            withAnimation(.easeOut(duration: 0.18)) { pane = g.translation.width < 0 ? 1 : 0 }
+        })
+        // Back to today, because opening the app asks about now. The crown goes with it or the next
+        // click resumes from wherever it was left days ago.
+        .onTapGesture { day = 0; crown = 0; model.refresh() }
+        .onChange(of: model.live?.generated_at) { _, _ in day = 0; crown = 0 }
         .onLongPressGesture(minimumDuration: 0.5) { showNumbers.toggle() }
     }
 
-    /// One hour of the FORECAST, while the crown is on it. Dim where the live middle is bright: none of
-    /// this is measured.
-    @ViewBuilder private func forecast(_ h: Live.Hour) -> some View {
+    /// A DAY THAT IS NOT TODAY, in the live block's place: how big, how good, and the wind, all of it
+    /// the forecast's. The day is named because the ring cannot say which day it is drawing.
+    @ViewBuilder private func summary(_ d: Live.Day) -> some View {
+        let hs = d.hours
+        let lo = hs.compactMap(\.ft_exact).min(), hi = hs.compactMap(\.ft_exact).max()
+        let best = hs.max(by: { rank($0.rating) < rank($1.rating) })
+        let midday = hs.first(where: { $0.h == 12 }) ?? hs.first
         VStack(spacing: 2) {
-            Text(h.t).font(.system(size: 13, weight: .heavy)).foregroundStyle(.secondary)
+            Text(Self.weekday(d.date)).font(.system(size: 13, weight: .heavy)).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(h.ft_exact.map { String(format: "%.1f", $0) } ?? "—")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                Text(lo == nil ? "—" : (lo == hi ? trim(lo) : "\(trim(lo))-\(trim(hi))"))
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .lineLimit(1).minimumScaleFactor(0.6)
                 Text("ft").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             }
-            Text(h.rating).font(.system(size: 11, weight: .heavy)).foregroundStyle(Color(hex: h.color))
-            if let kt = h.wind_kts {
-                Text("\(Int(kt.rounded())) kt \(h.wind_type ?? "")")
-                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(Color(hex: h.wind_color))
+            if let b = best {
+                Text(b.rating).font(.system(size: 11, weight: .heavy)).foregroundStyle(Color(hex: b.color))
                     .lineLimit(1).minimumScaleFactor(0.7)
             }
-            if let sw = h.swh_ft, let sp = h.swp_s {
-                Text("swell \(String(format: "%.1f", sw)) @ \(Int(sp))s")
-                    .font(.system(size: 9)).foregroundStyle(.secondary)
+            if let m = midday, let kt = m.wind_kts {
+                Text("\(Int(kt.rounded())) kt").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(hex: m.wind_color))
+            }
+            if let f = d.water_f {
+                Text("\(whole(f))°").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(hex: d.water_color))
             }
         }
         .padding(.horizontal, 30)
+    }
+
+    /// EVERY DAY AT ONCE: the rating grid, the height grid under it on the heat map's blue, and the
+    /// water across the same columns. A day is a COLUMN and an hour a row, 6am at the top, which is
+    /// the hub's own heat map turned to fit a square screen.
+    ///
+    /// The day the ring is on is marked by a line straight down its column, through all three — that
+    /// mark is the only thing tying this pane to the crown, since the ring itself is hidden behind
+    /// the numbers out at the edge.
+    @ViewBuilder private func grid(_ days: [Live.Day], selected: Int) -> some View {
+        Canvas { ctx, size in
+            let n = max(1, days.count), gap: CGFloat = 1
+            let cw = (size.width - CGFloat(n - 1) * gap) / CGFloat(n)
+            let waterH: CGFloat = 20, between: CGFloat = 4
+            let bandH = (size.height - waterH - between * 2) / 2
+            let ch = bandH / 12
+            let x = { (i: Int) in CGFloat(i) * (cw + gap) }
+            for (i, d) in days.enumerated() {
+                for h in d.hours where h.h >= 6 && h.h < 18 {
+                    let y = CGFloat(h.h - 6) * ch
+                    ctx.fill(Path(CGRect(x: x(i), y: y, width: cw, height: ch)),
+                             with: .color(Color(hex: h.color)))
+                    if let sc = h.size_color {
+                        ctx.fill(Path(CGRect(x: x(i), y: bandH + between + y, width: cw, height: ch)),
+                                 with: .color(Color(hex: sc)))
+                    }
+                }
+            }
+            // THE WATER, one point a day over the same columns, each segment in its own day's colour
+            // so the line reads warm or cold without a scale beside it. It stops where the marine
+            // model does, a few days short of the surf forecast.
+            let top = bandH * 2 + between * 2
+            let vals = days.map(\.water_f)
+            let known = vals.compactMap { $0 }
+            if known.count > 1 {
+                let lo = known.min()!, hi = known.max()!, span = max(0.1, hi - lo)
+                let py = { (v: Double) in top + waterH - 3 - CGFloat((v - lo) / span) * (waterH - 6) }
+                for i in 0..<(days.count - 1) {
+                    guard let a = vals[i], let b = vals[i + 1] else { continue }
+                    var p = Path()
+                    p.move(to: CGPoint(x: x(i) + cw / 2, y: py(a)))
+                    p.addLine(to: CGPoint(x: x(i + 1) + cw / 2, y: py(b)))
+                    ctx.stroke(p, with: .color(Color(hex: days[i].water_color)),
+                               style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                }
+            }
+            // The crown's day, straight down the middle of its column and through everything.
+            if days.indices.contains(selected) {
+                var p = Path()
+                p.move(to: CGPoint(x: x(selected) + cw / 2, y: 0))
+                p.addLine(to: CGPoint(x: x(selected) + cw / 2, y: size.height))
+                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: 1.5))
+            }
+        }
+        .frame(width: 118, height: 116)
+    }
+
+    /// Surfline's own order, worst to best, for picking a day's best hour.
+    private func rank(_ r: String) -> Int {
+        ["VERY_POOR", "POOR", "POOR_TO_FAIR", "FAIR", "FAIR_TO_GOOD", "GOOD", "GOOD_TO_EPIC", "EPIC"]
+            .firstIndex(of: r) ?? 0
+    }
+
+    private static let dayFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
+    }()
+    private static let weekdayFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE"; return f
+    }()
+    static func weekday(_ date: String) -> String {
+        guard let d = dayFmt.date(from: date) else { return date }
+        return weekdayFmt.string(from: d).uppercased()
     }
 
     /// The middle: the wind now, then the sea under it. What is MEASURED is big, and it says as little

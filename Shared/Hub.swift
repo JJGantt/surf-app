@@ -90,15 +90,20 @@ struct Live: Decodable {
         let hMin: Double?
         let hMax: Double?
     }
-    /// The surfable day the watch draws round the screen's edge: 6am to 6pm, today's until 6pm and
-    /// tomorrow's after that.
+    /// ONE SURFABLE DAY, 6am to 6pm. The feed sends every day of the forecast from today out, so the
+    /// same array is the ring the crown turns and the grid the other pane draws — one source, and no
+    /// way for the two to disagree about a day. `water_f` is that day's water at local noon and is
+    /// null past the marine model's range, which is shorter than the surf forecast's.
     struct Day: Decodable {
         let date: String
         let today: Bool
         let hours: [Hour]
+        let water_f: Double?
+        let water_color: String?
     }
     let wind: Wind?
-    let day: Day?
+    let days: [Day]
+    let generated_at: String?
     let sea: Sea?
     let buoys: [Buoy]
     let hours: [Hour]
