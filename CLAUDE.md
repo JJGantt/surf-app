@@ -167,6 +167,26 @@ Check it in the simulator rather than guessing, which takes about a minute:
     xcrun simctl launch <udid> com.jaredgantt.surf.watchkitapp
     xcrun simctl io <udid> screenshot /tmp/watch.png
 
+## The watch widgets — one extension, two different things
+
+`WatchWidgets/` ships both, and they are NOT the same API with different shapes:
+
+- A **CONTROL** (`ControlWidget`, watchOS 26+) reaches Control Center, the Smart Stack and an Ultra's
+  Action button — three surfaces for one declaration. It is drawn by the SYSTEM from a `Label`: a
+  symbol and some text, and there is no way to put a gauge, a colour or a reading of ours in it. So
+  the control opens the app and does nothing else. The two kinds that exist are a BUTTON and a TOGGLE;
+  nothing else. A control cannot hold stored properties either, since the system instantiates it.
+- A **COMPLICATION** (`Widget` + `StaticConfiguration`) is a view of OURS on the watch face, so this
+  is where a reading goes: the rating as colour with the height inside it, in the same grammar as the
+  app's own ring. Four families — circular, corner, rectangular, inline.
+
+THE COMPLICATION REFRESHES HOURLY, and that is a budget rather than a preference: watchOS grants a
+complication a small number of background refreshes a day and refuses the rest, so asking every few
+minutes leaves the face STALER than asking hourly. The forecast moves on a six-hour capture anyway.
+
+Registering `com.jaredgantt.surf.watchkitapp.widgets` came first — an unregistered bundle id fails the
+archive with a missing-profile error that names the profile rather than the id.
+
 ## Builds
 
 `tools/testflight.sh` from this Mac, first. `.github/workflows/testflight.yml` is the backup for when

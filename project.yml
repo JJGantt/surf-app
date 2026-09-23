@@ -67,3 +67,32 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
+    dependencies:
+      - target: GnarcastWatchWidgets
+        embed: true
+  # ONE EXTENSION, TWO SURFACES. A ControlWidget reaches Control Center, the Smart Stack and an
+  # Ultra's Action button; a complication reaches the watch face. They are different APIs with
+  # different limits — a control is a system-drawn Label and a complication is a view of our own —
+  # but they ship in the same widget extension, so this is one target and one bundle id for both.
+  GnarcastWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: WatchWidgets
+      - path: Shared
+    info:
+      path: WatchWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Gnarcast
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.jaredgantt.surf.watchkitapp.widgets
+        PRODUCT_NAME: GnarcastWatchWidgets
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "4"
