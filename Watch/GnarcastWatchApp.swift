@@ -155,7 +155,19 @@ struct EdgeDial: View {
                                     .foregroundColor(.white.opacity(0.85)),
                                  at: CGPoint(x: point.x, y: point.y - 6))
                     }
-                    if let kt = h.wind_kts {
+                    // A CORRECTED HOUR SHOWS THE CORRECTION, with the forecast's own figure ghosted
+                    // under it — the same grammar as the middle, so a number that has been moved is
+                    // never silently passed off as the model's.
+                    if let adj = h.wind_kts_adj, h.adj != nil {
+                        ctx.draw(Text(String(Int(adj.rounded()))).font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(Color(hex: h.wind_color_adj ?? h.wind_color)),
+                                 at: CGPoint(x: point.x, y: point.y + 6))
+                        if let kt = h.wind_kts {
+                            ctx.draw(Text(String(Int(kt.rounded()))).font(.system(size: 8))
+                                        .foregroundColor(.secondary.opacity(0.65)),
+                                     at: CGPoint(x: point.x, y: point.y + 15))
+                        }
+                    } else if let kt = h.wind_kts {
                         ctx.draw(Text(String(Int(kt.rounded()))).font(.system(size: 10, weight: .bold))
                                     .foregroundColor(Color(hex: h.wind_color)),
                                  at: CGPoint(x: point.x, y: point.y + 6))

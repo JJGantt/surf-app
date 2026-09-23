@@ -87,6 +87,12 @@ struct Live: Decodable {
         let wind_kts: Double?
         let wind_type: String?
         let wind_color: String?
+        /// The CORRECTED wind for this hour, when the measured wind has diverged from the forecast and
+        /// the error still carries this far ahead. `adj` is the weight it was carried with, 1 at the
+        /// next hour and 0 once the model is trusted again.
+        let wind_kts_adj: Double?
+        let wind_color_adj: String?
+        let adj: Double?
         let ft: String?
         var id: String { t }
     }
