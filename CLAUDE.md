@@ -116,3 +116,24 @@ Check it in the simulator rather than guessing, which takes about a minute:
 
 `tools/testflight.sh` from this Mac, first. `.github/workflows/testflight.yml` is the backup for when
 the Mac is away. Both number builds by UTC time; see README.
+
+TestFlight has a DAILY UPLOAD CAP — about 21 builds in a rolling day here, and the refusal is
+`Upload limit reached. The upload limit for your application has been reached.` Verify layout in the
+simulator and batch changes into one upload rather than shipping a build per adjustment.
+
+`tools/devinstall.sh` installs straight onto the phone over USB, no TestFlight. Three things have to
+be true once per device and each fails silently in its own way:
+
+- **The device is registered in the developer account.** A replacement handset is a NEW udid however
+  identical it looks, and every profile refuses it until it is added. The error names the profile, not
+  the device, so it reads as a signing problem.
+- **Developer Mode is on**, on the phone AND on the watch, and the iOS device support files for its
+  OS version are downloaded (Xcode offers this on first connect; they run to gigabytes).
+- **THE BUILD NUMBER MUST EXCEED WHAT TESTFLIGHT LAST PUT ON THE WATCH.** `project.yml` carries
+  `CURRENT_PROJECT_VERSION: "1"`, so a plain `xcodebuild` produces build 1; the watch app is then a
+  downgrade from the TestFlight copy and watchOS refuses it WITHOUT AN ERROR — the Watch app's install
+  spinner goes all the way round and the app never appears. The script stamps the same UTC timestamp
+  testflight.sh does, which keeps the two paths monotonic.
+
+A dev-signed build registers a SANDBOX APNs token, so it cannot receive push from the hub. It does not
+matter for Gnarcast, which sends none; it would silently break StatusHub.
