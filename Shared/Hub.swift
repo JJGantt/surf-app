@@ -30,6 +30,12 @@ struct Live: Decodable {
         let type_color: String?
         let age_min: Int?
         let stale: Bool?        // against the station's own cadence, not one number
+        /// The measured wind disagreeing with what was forecast for this hour, by enough to mean
+        /// something. The hub decides it (`lib/livewind.js`) on the half-hour average, so a gust does
+        /// not raise it and a divergence that has not held is not one.
+        let diverged: Bool?
+        let delta_kts: Double?
+        let delta_dir: Double?
         let forecast: Forecast?
     }
     struct Forecast: Decodable {
@@ -37,6 +43,7 @@ struct Live: Decodable {
         let compass: String?
         let type: String?
         let type_color: String?
+        let dir_to: Double?     // where the model said it would blow TO, for the ghost arrow
     }
     /// The two buoys blended into one sea for Mayport, which sits between them (status-hub
     /// lib/livebuoy.js). What to read; the buoys themselves are the detail behind it.

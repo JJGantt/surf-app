@@ -149,6 +149,15 @@ itself runs rather than a generic wetsuit chart's range); the `/surf` page's Wat
 same number the same way. Nothing but the bands touches the edge, because
 text under them is unreadable on both.
 
+THE MODEL RIDES AS A GHOST BEHIND THE MEASUREMENT, and only when the two genuinely disagree. The hub
+decides that (`diverged` in `lib/livewind.js`) on the HALF-HOUR AVERAGE, so a gust cannot raise it and
+a divergence that has not held is not one; it qualifies on 4 kt of speed, 40 degrees of direction, or
+a sector disagreement at any size, each of which is above this spot's own noise. The watch then draws
+a dim arrow at the direction the model expected and its speed under the live figure.
+
+It says WHICH WAY and BY HOW MUCH the forecast is wrong, which an indicator light cannot. And it ADDS
+rather than replaces: in agreement the ghost is simply absent.
+
 THE MIDDLE IS LIVE WHATEVER DAY THE RING IS, which is why NO SPOKE ACROSS ANY HOUR is what says the
 ring has rolled over to tomorrow, and nothing writes it in words. A label is the wrong instrument for
 it wherever it is put: placed anywhere near the middle it is read as qualifying the measured wind and

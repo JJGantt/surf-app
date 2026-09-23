@@ -373,7 +373,7 @@ struct LiveView: View {
                     .foregroundStyle(Color(hex: d.water_color))
             }
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 2)
     }
 
     /// EVERY DAY AT ONCE: the rating grid, the height grid under it on the heat map's blue, and the
@@ -602,14 +602,36 @@ struct LiveView: View {
             // over its age. No `kt` and no gust — the big figure on a surf face is knots, and a line
             // of units under it costs a row of a screen that has none to spare.
             if let w = l.wind {
+                // THE MODEL AS A GHOST BEHIND THE MEASUREMENT, and only when the two genuinely
+                // disagree (`diverged`, decided by the hub on the half-hour average). A dim arrow at
+                // the direction the model expected and its speed underneath, so the error is read as a
+                // fan between two arrows and a gap between two numbers — which says WHICH WAY and BY
+                // HOW MUCH the forecast is wrong. A lamp saying "diverging" says none of that.
+                //
+                // It ADDS, never replaces: in agreement the ghost is absent and this is what it always
+                // was.
+                let ghost = w.diverged == true ? w.forecast : nil
                 HStack(alignment: .center, spacing: 6) {
                     Text(trim(w.kts)).font(.system(size: 36, weight: .bold, design: .rounded))
+                        .lineLimit(1).fixedSize()
                     VStack(spacing: 1) {
-                        if let to = w.dir_to {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 18, weight: .bold))
-                                .rotationEffect(.degrees(to))
-                                .foregroundStyle(Color(hex: w.type_color))
+                        ZStack {
+                            if let g = ghost?.dir_to {
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .rotationEffect(.degrees(g))
+                                    .foregroundStyle(.secondary.opacity(0.5))
+                            }
+                            if let to = w.dir_to {
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .rotationEffect(.degrees(to))
+                                    .foregroundStyle(Color(hex: w.type_color))
+                            }
+                        }
+                        if let g = ghost, let k = g.kts {
+                            Text(trim(k)).font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.secondary.opacity(0.7))
                         }
                         if w.stale == true, let age = w.age_min {
                             Text(age >= 120 ? "\(age / 60)h" : "\(age)m")
@@ -639,7 +661,9 @@ struct LiveView: View {
                 }
             }
         }
-        // Inside the bands: the dial owns the edge, and a line that runs under it is unreadable on both.
-        .padding(.horizontal, 26)
+        // NO SIDE PADDING OF ITS OWN. The pane it sits in is already the width of the clear middle;
+        // padding on top of that left 76 points for a 36-point figure that needs 75, and the wind
+        // wrapped onto two lines.
+        .padding(.horizontal, 2)
     }
 }
