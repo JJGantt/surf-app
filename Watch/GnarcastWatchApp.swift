@@ -273,7 +273,7 @@ struct LiveView: View {
                     grid(days, selected: i).frame(width: Self.paneW)
                     Group {
                         if let w = l.weather {
-                            rainPane(w, days: days, selected: days[i].date)
+                            rainPane(w, days: days, now: l.now_hour, selected: days[i].date)
                         } else { Color.clear }
                     }
                     .frame(width: Self.paneW)
@@ -479,7 +479,8 @@ struct LiveView: View {
     /// empty columns to match would say the week ends in drought rather than that nothing is known.
     /// Under each column is that day's HIGHEST chance in the drawn hours, which is the number anyone
     /// actually asks of a rain forecast.
-    @ViewBuilder private func rainPane(_ w: Live.Weather, days: [Live.Day], selected: String?) -> some View {
+    @ViewBuilder private func rainPane(_ w: Live.Weather, days: [Live.Day], now: Double?,
+                                       selected: String?) -> some View {
         Canvas { ctx, size in
             let n = max(1, w.cols.count)
             let weekGap: CGFloat = 1, over: CGFloat = 0.6
@@ -514,9 +515,13 @@ struct LiveView: View {
                              with: .color(Color(hex: w.colors[v])))
                 }
                 let cx = x(i) + cw / 2
+                // THE CHANCE IS BLUE and the temperatures are not, which is what tells the two rows
+                // apart before either is read. The hairline under them says the same thing again for
+                // anyone who reads down a column rather than across a row.
                 if let p = peak {
                     ctx.draw(Text("\(w.percent(p))").font(.system(size: 8, weight: on ? .heavy : .semibold))
-                                .foregroundColor(on ? .white : .secondary),
+                                .foregroundColor(Color(red: 0.36, green: 0.74, blue: 0.9)
+                                                    .opacity(on ? 1 : 0.8)),
                              at: CGPoint(x: cx, y: size.height - footH + rainH / 2))
                 }
                 // THE AIR, high over low. Two figures with no units and no labels: on a column already
@@ -525,16 +530,32 @@ struct LiveView: View {
                 if let d = byDate[date] {
                     if let hi = d.air_hi {
                         ctx.draw(Text("\(hi)").font(.system(size: 8, weight: on ? .heavy : .semibold))
-                                    .foregroundColor(on ? .white : .secondary),
+                                    .foregroundColor(.white.opacity(on ? 1 : 0.85)),
                                  at: CGPoint(x: cx, y: size.height - tempH + 4))
                     }
                     if let lo = d.air_lo {
-                        ctx.draw(Text("\(lo)").font(.system(size: 8))
-                                    .foregroundColor(.secondary.opacity(0.75)),
+                        ctx.draw(Text("\(lo)").font(.system(size: 8, weight: on ? .semibold : .regular))
+                                    .foregroundColor(.secondary),
                                  at: CGPoint(x: cx, y: size.height - 4))
                     }
                 }
             }
+            // NOW, ACROSS THE WHOLE WIDTH — where in the day it is, which is what makes a column of
+            // colour mean anything. Laid over a black underlay: today's column runs bright cyan right
+            // where the line falls, and a bare white hairline on it cannot be seen.
+            if let u = now, u >= 0, u <= 24 {
+                let ny = headH + CGFloat(24 - u) * ch
+                var p = Path()
+                p.move(to: CGPoint(x: 0, y: ny)); p.addLine(to: CGPoint(x: size.width, y: ny))
+                ctx.stroke(p, with: .color(.black.opacity(0.85)), style: StrokeStyle(lineWidth: 3))
+                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: 1))
+            }
+            // The faintest rule between the chance and the temperatures.
+            var sep = Path()
+            sep.move(to: CGPoint(x: 6, y: size.height - tempH - 1))
+            sep.addLine(to: CGPoint(x: size.width - 6, y: size.height - tempH - 1))
+            ctx.stroke(sep, with: .color(.white.opacity(0.16)), style: StrokeStyle(lineWidth: 0.5))
+
             if let selected, let i = w.cols.firstIndex(of: selected) {
                 var p = Path()
                 p.move(to: CGPoint(x: x(i) + cw / 2, y: headH))
