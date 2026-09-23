@@ -40,11 +40,18 @@ the live readings, or every day at once as a grid. Either pane works on any day,
 never touch. A swipe rather than a `TabView`: the crown is already bound to this view and watchOS's
 paging styles want it for themselves.
 
-WHERE IT OPENS AND WHERE NOW IS BOTH COME FROM THE HUB (`open_day`, `now_hour`), never from the
-device. `Calendar.current` on the watch is the PHONE's timezone, so a spoke placed locally lands on
-the wrong hour the moment he travels. `open_day` is today until 6pm and the next day after: opening
-on today at 11pm is a ring of twelve hours that are entirely past, with no spoke anywhere on it —
-correct data and the wrong day to be looking at. A long press hides the edge numbers for the bands alone; a tap
+IT OPENS ON TODAY, always. Late in the evening that is a ring whose twelve hours have all been and
+gone, and it is still the day to open on — the crown is one turn away from tomorrow, and a face that
+quietly shows a different day than the one asked for is worse than one showing a finished day
+honestly.
+
+WHERE NOW IS COMES FROM THE HUB (`now_hour`), not the device: `Calendar.current` on the watch is the
+PHONE's timezone, so a spoke placed locally lands on the wrong hour the moment he travels.
+
+THE CROWN'S SPEED IS ITS RANGE. Bound straight to the day index, ten days is the crown's whole travel
+and a flick lands three days from the one you wanted; `perDay` gives each day four detents. The day
+label carries its DATE as well as its weekday (`FRI 9/25`), because Friday comes round twice in ten
+days and the span crosses a month. A long press hides the edge numbers for the bands alone; a tap
 refreshes and goes back to today, which is also where a refresh lands, because opening the app asks
 about now.
 

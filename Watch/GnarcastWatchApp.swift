@@ -161,6 +161,9 @@ struct LiveView: View {
     @ObservedObject var model: Model
     @State private var crown: Double = 0
     @State private var day = 0
+    /// DETENTS PER DAY, and it is what sets the crown's speed. Bound straight to the day index, ten
+    /// days is the crown's entire travel and a flick lands three days from the one you wanted.
+    private static let perDay = 4.0
     /// 0 the live readings, 1 the grid of every day.
     @State private var pane = 0
     /// The numbers round the edge, on by default; a long press puts them away for the bands alone.
@@ -194,9 +197,9 @@ struct LiveView: View {
         .ignoresSafeArea()
         .contentShape(Rectangle())
         .focusable()
-        .digitalCrownRotation($crown, from: 0, through: Double(max(1, days.count - 1)), by: 1,
-                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-        .onChange(of: crown) { _, v in day = Int(v.rounded()) }
+        .digitalCrownRotation($crown, from: 0, through: Double(max(1, days.count - 1)) * Self.perDay,
+                              by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+        .onChange(of: crown) { _, v in day = Int((v / Self.perDay).rounded()) }
         // A swipe, not a TabView: the crown is already bound here, and watchOS's paging styles want
         // it for themselves.
         .gesture(DragGesture(minimumDistance: 18).onEnded { g in
@@ -206,17 +209,17 @@ struct LiveView: View {
         })
         // Back to today, because opening the app asks about now. The crown goes with it or the next
         // click resumes from wherever it was left days ago.
-        .onTapGesture { open(model.live); model.refresh() }
-        .onChange(of: model.live?.generated_at) { _, _ in open(model.live) }
+        .onTapGesture { today(); model.refresh() }
+        .onChange(of: model.live?.generated_at) { _, _ in today() }
         .onLongPressGesture(minimumDuration: 0.5) { showNumbers.toggle() }
     }
 
-    /// Where the crown lands on a fresh read: the hub's `open_day`, which is today until 6pm and the
-    /// next day after. Opening on today at 11pm is a ring of twelve hours that are entirely past, with
-    /// no spoke anywhere on it — correct data and the wrong day to be looking at.
-    private func open(_ l: Live?) {
-        let i = l?.open_day ?? 0
-        day = i; crown = Double(i)
+    /// IT OPENS ON TODAY, always — `days[0]`. Late in the evening that is a ring whose twelve hours
+    /// have all been and gone, and it is still the day to open on: the crown is one turn away from
+    /// tomorrow, and a face that silently shows a different day than the one you asked for is worse
+    /// than one showing a finished day honestly.
+    private func today() {
+        day = 0; crown = 0
     }
 
     /// A DAY THAT IS NOT TODAY, in the live block's place: how big, how good, and the wind, all of it
@@ -227,7 +230,8 @@ struct LiveView: View {
         let best = hs.max(by: { rank($0.rating) < rank($1.rating) })
         let midday = hs.first(where: { $0.h == 12 }) ?? hs.first
         VStack(spacing: 2) {
-            Text(Self.weekday(d.date)).font(.system(size: 13, weight: .heavy)).foregroundStyle(.secondary)
+            Text(Self.weekday(d.date)).font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(lo == nil ? "—" : (lo == hi ? trim(lo) : "\(trim(lo))-\(trim(hi))"))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -314,8 +318,10 @@ struct LiveView: View {
     private static let dayFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
     }()
+    /// THE WEEKDAY IS NOT ENOUGH over ten days — Friday comes round twice — so the date rides with
+    /// it, and with its month, because the span crosses one.
     private static let weekdayFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "EEE"; return f
+        let f = DateFormatter(); f.dateFormat = "EEE M/d"; return f
     }()
     static func weekday(_ date: String) -> String {
         guard let d = dayFmt.date(from: date) else { return date }
