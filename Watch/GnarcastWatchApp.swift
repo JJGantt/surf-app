@@ -57,6 +57,10 @@ final class Model: ObservableObject {
 /// spoke marks the hour in question: now, or whatever the crown has scrubbed to.
 struct EdgeDial: View {
     let day: Live.Day
+    /// The INNER band, one hex per hour from 6am, nil where there is no reading. It is the RAIN
+    /// chance rather than the wave height: the height is already written as a figure at every hour,
+    /// so a band repeating it spends the ring's second ring saying the same thing twice.
+    var rain: [String?]
     var at: Double?
     var numbers: Bool
     var inset: CGFloat = 3
@@ -86,7 +90,7 @@ struct EdgeDial: View {
                 // by a hair, since abutting strokes on fractional pixels antialias into pale seams,
                 // which is the very thing the fade exists to remove.
                 let rate = Self.ramp(day.hours) { $0.color }
-                let size = Self.ramp(day.hours) { $0.size_color }
+                let size = Self.ramp(hex: rain)
                 let steps = 144
                 for k in 0..<steps {
                     let f0 = CGFloat(k) / CGFloat(steps), f1 = CGFloat(k + 1) / CGFloat(steps)
@@ -169,13 +173,19 @@ struct EdgeDial: View {
     static func ramp(_ hours: [Live.Hour], _ pick: (Live.Hour) -> String?) -> [(Double, Double, Double)?] {
         var out = [(Double, Double, Double)?](repeating: nil, count: 12)
         for h in hours where h.h >= 6 && h.h < 18 {
-            guard let hex = pick(h) else { continue }
-            var v: UInt64 = 0
-            guard hex.hasPrefix("#"), let n = UInt64(hex.dropFirst(), radix: 16) else { continue }
-            v = n
-            out[h.h - 6] = (Double((v >> 16) & 0xff) / 255, Double((v >> 8) & 0xff) / 255, Double(v & 0xff) / 255)
+            out[h.h - 6] = rgb(pick(h))
         }
         return out
+    }
+
+    /// The same, from twelve hex strings already in hour order.
+    static func ramp(hex: [String?]) -> [(Double, Double, Double)?] {
+        (0..<12).map { $0 < hex.count ? rgb(hex[$0]) : nil }
+    }
+
+    static func rgb(_ hex: String?) -> (Double, Double, Double)? {
+        guard let hex, hex.hasPrefix("#"), let v = UInt64(hex.dropFirst(), radix: 16) else { return nil }
+        return (Double((v >> 16) & 0xff) / 255, Double((v >> 8) & 0xff) / 255, Double(v & 0xff) / 255)
     }
 
     /// The colour at a continuous hour offset. Flat across the middle of an hour, crossing to its
@@ -247,7 +257,9 @@ struct LiveView: View {
                 // words, and a label is the wrong instrument for it whatever it says: a word anywhere
                 // near the middle is read as qualifying those numbers. A clock hand pointing at no
                 // hour already means these are not the hours you are in.
-                EdgeDial(day: days[i], at: days[i].today ? l.now_hour : nil, numbers: showNumbers)
+                EdgeDial(day: days[i],
+                         rain: (6..<18).map { l.weather?.hex(date: days[i].date, hour: $0) },
+                         at: days[i].today ? l.now_hour : nil, numbers: showNumbers)
                 if pane == 1 {
                     grid(days, selected: i)
                 } else if days[i].today {

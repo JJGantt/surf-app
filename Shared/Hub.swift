@@ -101,7 +101,26 @@ struct Live: Decodable {
         let water_f: Double?
         let water_color: String?
     }
+    /// RAIN CHANCE, as the hub's weather card encodes it: `pop` is one base-36 character per hour,
+    /// 24 to a day, indexing `colors`; `.` is no reading. It runs SEVEN days where the surf forecast
+    /// runs ten, so the last days of the ring have no rain to draw.
+    struct Weather: Decodable {
+        let cols: [String]
+        let pop: String
+        let colors: [String]
+
+        /// The hour's colour on a given day, or nil where there is no reading.
+        func hex(date: String, hour: Int) -> String? {
+            guard let c = cols.firstIndex(of: date) else { return nil }
+            let i = c * 24 + hour
+            let ch = Array(pop)
+            guard i >= 0, i < ch.count, ch[i] != "." else { return nil }
+            guard let v = Int(String(ch[i]), radix: 36), v >= 0, v < colors.count else { return nil }
+            return colors[v]
+        }
+    }
     let wind: Wind?
+    let weather: Weather?
     let days: [Day]
     /// Where now falls in the ring, on the BREAK's clock rather than the device's: `Calendar.current`
     /// is the PHONE's timezone, so a spoke placed from the device lands on the wrong hour the moment

@@ -22,8 +22,16 @@ The band follows the SCREEN'S OWN rounded-square border (`EdgeDial`), not a circ
 a circle wastes the corners and stops short of the bezel. It is not a clock either: the whole way
 round is 6am to 6pm, 6am at the bottom, up the left, noon at the top, down the right to 6pm, because
 that is the day worth surfing. The hub sends every day of the forecast (`days` in `surfLive`), each
-one those twelve hours, plus that day's water at local noon for the grid pane's plot. Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
-hour — the height that breaks, to a decimal, and the wind, bare because its colour is its direction.
+one those twelve hours, plus that day's water at local noon for the grid pane's plot. Outside in: the RATING band, the RAIN band, then two numbers an hour — the height that breaks, to a
+decimal, and the wind, bare because its colour is its direction.
+
+THE INNER BAND IS RAIN, NOT WAVE HEIGHT. The height is already written as a figure at every hour, so a
+band repeating it spends the ring's second ring saying the same thing twice; rain is the one thing on
+the feed that nothing else on this face carries. It comes from the hub's weather card verbatim
+(`weather.pop`, one base-36 character an hour indexing `weather.colors`, `.` for no reading), so the
+watch and the hub cannot disagree about a colour. Two consequences to expect rather than debug: the
+rain runs SEVEN days where the surf runs ten, so the last days of the ring have no inner band, and
+hours already past carry no reading either, which is why this morning's early hours are bare.
 The exact height earns its place because Surfline's range is coarse: a whole morning reads `1-2 ft`
 while the raw numbers climb 1.5, 1.6, 1.5 through it. Swell PERIOD is not drawn per hour — it moves a
 median of one second across a daylight day here, and 10-12s and 12-20s hours rate the same, so twelve
