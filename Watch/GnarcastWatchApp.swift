@@ -40,9 +40,16 @@ final class Model: ObservableObject {
 // ---- the dial ---------------------------------------------------------------------------------------
 
 /// THE DAY AROUND THE SCREEN'S OWN EDGE. The watch is a rounded square, not a circle, so the band is
-/// twelve stretches of that border rather than a ring drawn inside it. It is not a clock either: the
-/// whole way round is 6am to 6pm — 6am at the BOTTOM, up the left side, noon at the TOP, down the
-/// right to 6pm back at the bottom — because those twelve hours are the day worth surfing.
+/// stretches of that border rather than a ring drawn inside it. It is not a clock either: the whole
+/// way round is 6am to 6pm — up the left side, noon at the TOP, down the right — because those are the
+/// hours worth surfing.
+///
+/// THIRTEEN SLOTS, NOT TWELVE, and the arithmetic is the whole reason. 6am to 6pm INCLUSIVE is
+/// thirteen hourly readings. Give them thirteen slots and each hour owns the block from `slot/13` to
+/// `(slot+1)/13`, so the day's BOUNDARY falls at 0 — bottom centre, the clean vertical — and noon's
+/// block is centred at 6.5/13, which is exactly 0.5, the top. Twelve slots can do neither: 6pm lands
+/// back on 6am's own mark, and the join between the last hour and the first ends up half an hour
+/// clockwise of the bottom, in a notch that reads as an accident.
 ///
 /// Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
 /// hour — the height that breaks, exact, and the wind, bare because its colour is its direction. A
@@ -67,50 +74,43 @@ struct EdgeDial: View {
             let numRect = inner.insetBy(dx: sizeWidth / 2 + 13, dy: sizeWidth / 2 + 13)
             let numberRing = Self.border(numRect, max(2, radius - width - between - sizeWidth - 13))
             Canvas { ctx, _ in
-                // EACH HOUR IS CENTRED ON ITS OWN MARK: 6am sits at the bottom, 3pm a quarter of the
-                // way back up the right, and the segment straddles it by half an hour either side. Laid
-                // out as blocks BETWEEN the marks instead, the 3pm number would sit at half past three
-                // while the spoke — which is the real clock — pointed at three.
-                let gap = 0.004          // a hair between hours, so twelve stretches read as twelve
-                for h in day.hours where h.h >= 6 && h.h < 18 {
+                // EACH HOUR OWNS ITS OWN BLOCK and its number sits at the block's centre, which is
+                // also where the spoke lands at that hour — so the reading, the band and the clock all
+                // point at the same place. The blocks tile the ring exactly, which is what leaves a
+                // real edge at 0 for the day's boundary.
+                let gap = 0.004          // a hair between hours, so the stretches read as separate
+                for h in day.hours where h.h >= 6 && h.h <= 18 {
                     let slot = CGFloat(h.h - 6)
-                    let from = (slot - 0.5) / 12, to = (slot + 0.5) / 12
-                    for (a, b) in Self.wrapped(from + gap, to - gap) {
-                        ctx.stroke(ring.trimmedPath(from: a, to: b), with: .color(Color(hex: h.color)),
-                                   style: StrokeStyle(lineWidth: width, lineCap: .butt))
-                        if let sc = h.size_color {
-                            ctx.stroke(sizeRing.trimmedPath(from: a, to: b), with: .color(Color(hex: sc)),
-                                       style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
-                        }
+                    let a = slot / Self.slots + gap, b = (slot + 1) / Self.slots - gap
+                    ctx.stroke(ring.trimmedPath(from: a, to: b), with: .color(Color(hex: h.color)),
+                               style: StrokeStyle(lineWidth: width, lineCap: .butt))
+                    if let sc = h.size_color {
+                        ctx.stroke(sizeRing.trimmedPath(from: a, to: b), with: .color(Color(hex: sc)),
+                                   style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
                     }
                 }
 
-                // THE DAY'S BOUNDARY. Every other gap in the ring is a half-hour between two hours;
-                // this one is the join between the LAST hour and the FIRST, and it is the only place
-                // the ring begins. It falls half an hour clockwise of bottom centre rather than on it,
-                // and that is not a compromise: hours are centred on their own marks, so putting the
-                // join at bottom centre would mean moving every hour off its mark. The sun sits on the
-                // morning side of it — the side the day runs towards.
-                let seam = CGFloat(11.5) / 12
-                if let p = ring.trimmedPath(from: seam - 0.0005, to: seam + 0.0005).currentPoint {
-                    let c = CGPoint(x: rect.midX, y: rect.midY)
-                    let v = CGPoint(x: p.x - c.x, y: p.y - c.y)
+                // THE DAY'S BOUNDARY, on the vertical: where 6pm meets 6am. TWO TICKS, NOT ONE, and
+                // the pair is the whole signifier — warm on the morning side, cold on the evening
+                // side, so the direction the day runs is read off the colour with nothing to learn and
+                // no room spent. A sunrise glyph was the obvious alternative and there is nowhere to
+                // put it: the first and last hours' own figures sit either side of the boundary, and at
+                // the bottom of the ring pulling a mark inward moves it straight at them.
+                for (f, c) in [(0.006, Color.orange), (-0.006, Color(red: 0.36, green: 0.42, blue: 0.85))] {
+                    let at = f < 0 ? 1 + f : f
+                    guard let p = ring.trimmedPath(from: at, to: at + 0.0005).currentPoint else { continue }
+                    let ctr = CGPoint(x: rect.midX, y: rect.midY)
+                    let v = CGPoint(x: p.x - ctr.x, y: p.y - ctr.y)
                     var tick = Path()
-                    tick.move(to: CGPoint(x: c.x + v.x * 1.05, y: c.y + v.y * 1.05))
-                    tick.addLine(to: CGPoint(x: c.x + v.x * 0.88, y: c.y + v.y * 0.88))
-                    ctx.stroke(tick, with: .color(.white), style: StrokeStyle(lineWidth: 2, lineCap: .butt))
-                }
-                // Immediately clockwise of the join, which is the morning side. Far enough from the
-                // first hour's own numbers not to crowd them, close enough to the tick to belong to it.
-                if let p = numberRing.trimmedPath(from: seam + 0.012, to: seam + 0.013).currentPoint {
-                    ctx.draw(Text(Image(systemName: "sunrise.fill")).font(.system(size: 8))
-                                .foregroundColor(.orange), at: p)
+                    tick.move(to: CGPoint(x: ctr.x + v.x * 1.05, y: ctr.y + v.y * 1.05))
+                    tick.addLine(to: CGPoint(x: ctr.x + v.x * 0.88, y: ctr.y + v.y * 0.88))
+                    ctx.stroke(tick, with: .color(c), style: StrokeStyle(lineWidth: 2, lineCap: .butt))
                 }
 
                 // The hour in question: a spoke from just outside the rating band inward past the
                 // numbers, drawn BEFORE them so a number is never covered by it.
-                if let hour = at, hour >= 6, hour < 18 {
-                    let f = CGFloat((hour - 6) / 12)
+                if let hour = at, hour >= 5.5, hour <= 18.5 {
+                    let f = CGFloat(hour - 5.5) / Self.slots
                     let onRing = ring.trimmedPath(from: max(0, f - 0.0005), to: min(1, f + 0.0005))
                     if let p = onRing.currentPoint {
                         let centre = CGPoint(x: rect.midX, y: rect.midY)
@@ -123,8 +123,8 @@ struct EdgeDial: View {
                 }
 
                 guard numbers else { return }
-                for h in day.hours where h.h >= 6 && h.h < 18 {
-                    let mid = CGFloat(h.h - 6) / 12
+                for h in day.hours where h.h >= 6 && h.h <= 18 {
+                    let mid = (CGFloat(h.h - 6) + 0.5) / Self.slots
                     let p = numberRing.trimmedPath(from: max(0, mid - 0.0005), to: min(1, mid + 0.0005))
                     guard let point = p.currentPoint else { continue }
                     if let ft = h.ft_exact {
@@ -142,13 +142,8 @@ struct EdgeDial: View {
         }
     }
 
-    /// A span that may run off either end of the path, as the 6am segment does — half of it belongs to
-    /// the last of the ring and half to the first.
-    static func wrapped(_ from: CGFloat, _ to: CGFloat) -> [(CGFloat, CGFloat)] {
-        if from < 0 { return [(0, max(0, to)), (1 + from, 1)] }
-        if to > 1 { return [(min(1, from), 1), (0, to - 1)] }
-        return [(from, to)]
-    }
+    /// 6am through 6pm inclusive.
+    static let slots: CGFloat = 13
 
     /// The border drawn from BOTTOM CENTRE, clockwise — so 6am starts at the bottom and noon lands at
     /// the top. The corner radius is the screen's, near enough that the band keeps the same distance
@@ -289,7 +284,7 @@ struct LiveView: View {
             let cw = (size.width - CGFloat(n - 1) * gap) / CGFloat(n)
             let headH: CGFloat = 11, waterH: CGFloat = 20, between: CGFloat = 4
             let bandH = (size.height - headH - waterH - between * 2) / 2
-            let ch = bandH / 12
+            let ch = bandH / EdgeDial.slots
             let x = { (i: Int) in CGFloat(i) * (cw + gap) }
             // A COLUMN IS A DAY and needs saying: ten unlabelled columns are a picture of nothing in
             // particular. One letter each, and today's in full white — where the grid starts is the
@@ -301,7 +296,7 @@ struct LiveView: View {
                          at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
             }
             for (i, d) in days.enumerated() {
-                for h in d.hours where h.h >= 6 && h.h < 18 {
+                for h in d.hours where h.h >= 6 && h.h <= 18 {
                     let y = headH + CGFloat(h.h - 6) * ch
                     ctx.fill(Path(CGRect(x: x(i), y: y, width: cw, height: ch)),
                              with: .color(Color(hex: h.color)))
