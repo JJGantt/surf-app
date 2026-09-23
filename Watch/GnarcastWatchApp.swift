@@ -248,28 +248,29 @@ struct LiveView: View {
     /// The middle: the wind now, then the sea under it. What is MEASURED is big, and it says as little
     /// as it can. The direction is an ARROW pointing where the wind BLOWS, coloured green offshore,
     /// amber cross, red onshore — so there is no word for it and no compass point to turn around in
-    /// your head. Age is a bare `4h` when the reading is old, and nothing at all when it is not.
+    /// your head. Age is a bare `4h`, shown only when the HUB calls the reading stale (`stale` in the
+    /// feed, judged against the reporting station's own cadence) and nothing at all otherwise.
     @ViewBuilder private func middle(_ l: Live) -> some View {
         VStack(spacing: 2) {
+            // The wind is the NUMBER, and the two things that qualify it stack beside it: the arrow
+            // over its age. No `kt` and no gust — the big figure on a surf face is knots, and a line
+            // of units under it costs a row of a screen that has none to spare.
             if let w = l.wind {
-                HStack(alignment: .center, spacing: 5) {
+                HStack(alignment: .center, spacing: 6) {
                     Text(trim(w.kts)).font(.system(size: 36, weight: .bold, design: .rounded))
-                    if let to = w.dir_to {
-                        Image(systemName: "arrow.up")
-                            .font(.system(size: 20, weight: .bold))
-                            .rotationEffect(.degrees(to))
-                            .foregroundStyle(Color(hex: w.type_color))
+                    VStack(spacing: 1) {
+                        if let to = w.dir_to {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 18, weight: .bold))
+                                .rotationEffect(.degrees(to))
+                                .foregroundStyle(Color(hex: w.type_color))
+                        }
+                        if w.stale == true, let age = w.age_min {
+                            Text(age >= 120 ? "\(age / 60)h" : "\(age)m")
+                                .font(.system(size: 10, weight: .semibold)).foregroundStyle(.orange)
+                        }
                     }
                 }
-                HStack(spacing: 5) {
-                    Text("kt").font(.system(size: 10, weight: .semibold))
-                    if let g = w.gust { Text("g\(whole(g))").font(.system(size: 10)) }
-                    if let age = w.age_min, age > 30 {
-                        Text(age >= 120 ? "\(age / 60)h" : "\(age)m")
-                            .font(.system(size: 10, weight: .semibold)).foregroundStyle(.orange)
-                    }
-                }
-                .foregroundStyle(.secondary)
             }
             if let s = l.sea {
                 Divider().padding(.horizontal, 30).padding(.vertical, 1)

@@ -29,6 +29,7 @@ struct Live: Decodable {
         let type: String?
         let type_color: String?
         let age_min: Int?
+        let stale: Bool?        // against the station's own cadence, not one number
         let forecast: Forecast?
     }
     struct Forecast: Decodable {

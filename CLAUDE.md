@@ -39,7 +39,11 @@ letting go after eight seconds, because a watch left on 9am at four in the after
 now. A long press hides the numbers for the bands alone.
 
 The middle is the measured wind and the sea, and the wind's direction is an ARROW pointing where it
-BLOWS (`dir_to` in the feed) — a compass point has to be turned around in your head first. The water
+BLOWS (`dir_to` in the feed) — a compass point has to be turned around in your head first. There is
+no unit and no gust beside it: the big figure on a surf face is knots, and the arrow and the reading's
+age stack next to it instead. The age shows only when the hub says `stale`, which it judges against
+the reporting station's cadence — the dock reports every six minutes and the KNRB fallback hourly, so
+one threshold would flag a current hourly report through most of every hour of an outage. The water
 temperature reads at the same size as the sea and swell lines and in its own colour (`water_color`,
 cold blue to warm orange, computed by `waterColor` in the hub and spread across the 51-88F Mayport
 itself runs rather than a generic wetsuit chart's range); the `/surf` page's Water card draws the
