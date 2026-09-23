@@ -172,13 +172,19 @@ struct LiveView: View {
     var body: some View {
         ZStack {
             if let l = model.live {
+                // NO SPOKE ACROSS ANY HOUR IS WHAT SAYS THE RING IS TOMORROW'S — from 6pm, when the
+                // day it draws rolls over. Nothing writes it in words, and a label is the wrong
+                // instrument for it whatever it says: the middle is measured and LIVE whatever day
+                // the ring is, so a word placed anywhere near it is read as qualifying those
+                // numbers. A clock hand pointing at no hour already means these are not the hours
+                // you are in.
                 if let d = l.day {
                     EdgeDial(day: d,
                              at: scrubbed.map(Double.init) ?? (d.today ? nowHour : nil),
                              numbers: showNumbers)
                 }
                 if let h = scrubbed, let hour = l.day?.hours.first(where: { $0.h == h }) {
-                    forecast(hour, tomorrow: l.day?.today == false)
+                    forecast(hour)
                 } else {
                     middle(l)
                 }
@@ -205,26 +211,10 @@ struct LiveView: View {
         .onLongPressGesture(minimumDuration: 0.5) { showNumbers.toggle() }
     }
 
-    /// WHICH DAY THE RING IS. The spoke only exists on today's, so once the ring has moved on to
-    /// tomorrow — which it does at 6pm — something has to say so or the missing spoke reads as a fault.
-    ///
-    /// It labels the RING and nothing else, which decides where it can go. The middle is MEASURED — the
-    /// wind, the sea and the water as they are right now — whatever day the ring is showing, so a line
-    /// sitting over that block claims those numbers are tomorrow's. Under the block it is a footnote to
-    /// the face; over it, it is a lie. The top of the screen is no good either: there it lands under the
-    /// bands and across the noon numbers and is cut in half.
-    @ViewBuilder private func dayMark(_ tomorrow: Bool) -> some View {
-        if tomorrow {
-            Text("tomorrow").font(.system(size: 9, weight: .heavy))
-                .foregroundStyle(.tertiary).textCase(.uppercase)
-        }
-    }
-
     /// One hour of the FORECAST, while the crown is on it. Dim where the live middle is bright: none of
     /// this is measured.
-    @ViewBuilder private func forecast(_ h: Live.Hour, tomorrow: Bool) -> some View {
+    @ViewBuilder private func forecast(_ h: Live.Hour) -> some View {
         VStack(spacing: 2) {
-            dayMark(tomorrow)
             Text(h.t).font(.system(size: 13, weight: .heavy)).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(h.ft_exact.map { String(format: "%.1f", $0) } ?? "—")
@@ -292,7 +282,6 @@ struct LiveView: View {
                         .foregroundStyle(Color(hex: s.water_color))
                 }
             }
-            dayMark(l.day?.today == false).padding(.top, 4)
         }
         // Inside the bands: the dial owns the edge, and a line that runs under it is unreadable on both.
         .padding(.horizontal, 26)

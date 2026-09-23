@@ -50,11 +50,11 @@ itself runs rather than a generic wetsuit chart's range); the `/surf` page's Wat
 same number the same way. Nothing but the bands touches the edge, because
 text under them is unreadable on both.
 
-THE MIDDLE IS LIVE WHATEVER DAY THE RING IS. The spoke exists only on today's ring, so once the ring
-is tomorrow's — from 6pm — a `tomorrow` label says so, or the missing spoke reads as a fault. It goes
-UNDER the live block: over it, it claims the measured wind and sea are tomorrow's, which they never
-are. On a scrubbed hour it heads the block instead, because there everything on screen is the ring's
-day.
+THE MIDDLE IS LIVE WHATEVER DAY THE RING IS, which is why NO SPOKE ACROSS ANY HOUR is what says the
+ring has rolled over to tomorrow, and nothing writes it in words. A label is the wrong instrument for
+it wherever it is put: placed anywhere near the middle it is read as qualifying the measured wind and
+sea, which are never tomorrow's, and the top of the screen is under the bands and across the noon
+numbers. A clock hand pointing at no hour already says these are not the hours you are in.
 
 Water Lock is Apple's, not ours: an app can stop its own touches but not watchOS's gestures, so a
 half-measure inside the app was worse than the real thing (it cost double tap; Apple support 108413).
