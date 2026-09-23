@@ -472,7 +472,8 @@ struct LiveView: View {
 
     /// RAIN, ITS OWN PANE. The same grammar as the grid beside it — a day per column, 6am at the
     /// bottom, one seam before each Sunday, the crown's day a white line with its letter in white —
-    /// so the two read as two views of one week rather than two different charts.
+    /// so the two read as two views of one week rather than two different charts — but over ALL 24 hours,
+    /// not the twelve worth surfing: rain before dawn or at ten at night still decides something.
     ///
     /// It is SEVEN columns, not ten: the rain forecast is shorter than the surf one, and showing three
     /// empty columns to match would say the week ends in drought rather than that nothing is known.
@@ -490,8 +491,12 @@ struct LiveView: View {
             // Two rows under the grid: the day's highest rain chance, then its air high over its low.
             let headH: CGFloat = 11, rainH: CGFloat = 11, tempH: CGFloat = 16
             let footH = rainH + tempH
-            let ch = (size.height - headH - footH) / 12
-            let y = { (h: Int) in headH + CGFloat(17 - h) * ch }
+            // THE WHOLE DAY, all 24 hours, where the surf grid draws only the twelve worth surfing.
+            // Rain is a question about the day — whether it lands before dawn or at ten at night still
+            // decides something — and 24 rows in this height is still three and a half points a row,
+            // which is a heat map's worth of colour even if it is not a row anyone counts.
+            let ch = (size.height - headH - footH) / 24
+            let y = { (h: Int) in headH + CGFloat(23 - h) * ch }
             let byDate = Dictionary(uniqueKeysWithValues: days.map { ($0.date, $0) })
             for (i, date) in w.cols.enumerated() {
                 let on = date == selected
@@ -501,10 +506,10 @@ struct LiveView: View {
                          at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
                 let dx = (i + 1 < n && !sundays.contains(i + 1)) ? over : 0
                 var peak: Int? = nil
-                for h in 6..<18 {
+                for h in 0..<24 {
                     guard let v = w.level(date: date, hour: h) else { continue }
                     peak = max(peak ?? 0, v)
-                    let dy: CGFloat = h > 6 ? over : 0
+                    let dy: CGFloat = h > 0 ? over : 0
                     ctx.fill(Path(CGRect(x: x(i), y: y(h), width: cw + dx, height: ch + dy)),
                              with: .color(Color(hex: w.colors[v])))
                 }

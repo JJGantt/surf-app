@@ -74,8 +74,10 @@ CLEAR MIDDLE — the ring's hourly figures sit about 45 points in from each edge
 over them as it slides past.
 
 THE RAIN PANE is seven columns, not ten: the rain forecast is shorter than the surf one, and padding
-it to match would say the week ends in drought rather than that nothing is known. Under each column is
-that day's HIGHEST chance in the drawn hours — the number anyone actually asks of a rain forecast —
+it to match would say the week ends in drought rather than that nothing is known. It draws ALL 24 HOURS where the surf grid draws only the twelve worth surfing: rain before dawn or at
+ten at night still decides something. Under each column is that day's HIGHEST chance across the whole
+day — the number anyone actually asks of a rain forecast, and higher than a daylight-only reading
+whenever the weather comes overnight —
 and under that the air HIGH over its LOW, unlabelled and without units, because on a column already
 headed by its day and footed by a percentage, a bigger number over a smaller one in the seventies
 reads as nothing else.
