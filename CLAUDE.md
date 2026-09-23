@@ -75,8 +75,14 @@ over them as it slides past.
 
 THE RAIN PANE is seven columns, not ten: the rain forecast is shorter than the surf one, and padding
 it to match would say the week ends in drought rather than that nothing is known. Under each column is
-that day's HIGHEST chance in the drawn hours, which is the number anyone actually asks of a rain
-forecast.
+that day's HIGHEST chance in the drawn hours — the number anyone actually asks of a rain forecast —
+and under that the air HIGH over its LOW, unlabelled and without units, because on a column already
+headed by its day and footed by a percentage, a bigger number over a smaller one in the seventies
+reads as nothing else.
+
+The air figures are taken over the WHOLE local day (`air_hi` / `air_lo`, computed in `surfLive` from
+the snapshot's `aT`), not over the drawn hours: the day's low is a pre-dawn number, and reading it off
+6am onward reports the morning's low as the day's.
 
 TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY — today out to the end of the forecast
 — and the ring redraws for it. A horizontal SWIPE picks what the MIDDLE says, and nothing else:

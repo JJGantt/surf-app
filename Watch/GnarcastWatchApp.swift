@@ -272,7 +272,9 @@ struct LiveView: View {
                     dayPane(l, days[i]).frame(width: Self.paneW)
                     grid(days, selected: i).frame(width: Self.paneW)
                     Group {
-                        if let w = l.weather { rainPane(w, selected: days[i].date) } else { Color.clear }
+                        if let w = l.weather {
+                            rainPane(w, days: days, selected: days[i].date)
+                        } else { Color.clear }
                     }
                     .frame(width: Self.paneW)
                 }
@@ -476,7 +478,7 @@ struct LiveView: View {
     /// empty columns to match would say the week ends in drought rather than that nothing is known.
     /// Under each column is that day's HIGHEST chance in the drawn hours, which is the number anyone
     /// actually asks of a rain forecast.
-    @ViewBuilder private func rainPane(_ w: Live.Weather, selected: String?) -> some View {
+    @ViewBuilder private func rainPane(_ w: Live.Weather, days: [Live.Day], selected: String?) -> some View {
         Canvas { ctx, size in
             let n = max(1, w.cols.count)
             let weekGap: CGFloat = 1, over: CGFloat = 0.6
@@ -485,9 +487,12 @@ struct LiveView: View {
             let x = { (i: Int) in
                 CGFloat(i) * cw + CGFloat(sundays.filter { $0 <= i }.count) * weekGap
             }
-            let headH: CGFloat = 11, footH: CGFloat = 12
+            // Two rows under the grid: the day's highest rain chance, then its air high over its low.
+            let headH: CGFloat = 11, rainH: CGFloat = 11, tempH: CGFloat = 16
+            let footH = rainH + tempH
             let ch = (size.height - headH - footH) / 12
             let y = { (h: Int) in headH + CGFloat(17 - h) * ch }
+            let byDate = Dictionary(uniqueKeysWithValues: days.map { ($0.date, $0) })
             for (i, date) in w.cols.enumerated() {
                 let on = date == selected
                 ctx.draw(Text(String(Self.weekday(date).prefix(1)))
@@ -503,10 +508,26 @@ struct LiveView: View {
                     ctx.fill(Path(CGRect(x: x(i), y: y(h), width: cw + dx, height: ch + dy)),
                              with: .color(Color(hex: w.colors[v])))
                 }
+                let cx = x(i) + cw / 2
                 if let p = peak {
                     ctx.draw(Text("\(w.percent(p))").font(.system(size: 8, weight: on ? .heavy : .semibold))
                                 .foregroundColor(on ? .white : .secondary),
-                             at: CGPoint(x: x(i) + cw / 2, y: size.height - footH / 2))
+                             at: CGPoint(x: cx, y: size.height - footH + rainH / 2))
+                }
+                // THE AIR, high over low. Two figures with no units and no labels: on a column already
+                // headed by its day and footed by a rain chance, a bigger number over a smaller one in
+                // the seventies is not going to be read as anything else.
+                if let d = byDate[date] {
+                    if let hi = d.air_hi {
+                        ctx.draw(Text("\(hi)").font(.system(size: 8, weight: on ? .heavy : .semibold))
+                                    .foregroundColor(on ? .white : .secondary),
+                                 at: CGPoint(x: cx, y: size.height - tempH + 4))
+                    }
+                    if let lo = d.air_lo {
+                        ctx.draw(Text("\(lo)").font(.system(size: 8))
+                                    .foregroundColor(.secondary.opacity(0.75)),
+                                 at: CGPoint(x: cx, y: size.height - 4))
+                    }
                 }
             }
             if let selected, let i = w.cols.firstIndex(of: selected) {

@@ -100,6 +100,10 @@ struct Live: Decodable {
         let hours: [Hour]
         let water_f: Double?
         let water_color: String?
+        /// The day's air high and low, taken over the WHOLE local day — its low is a pre-dawn number,
+        /// so reading it off the drawn hours alone would report the morning's low as the day's.
+        let air_hi: Int?
+        let air_lo: Int?
     }
     /// RAIN CHANCE, as the hub's weather card encodes it: `pop` is one base-36 character per hour,
     /// 24 to a day, indexing `colors`; `.` is no reading. It runs SEVEN days where the surf forecast
