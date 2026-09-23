@@ -25,11 +25,17 @@ answers it: `surf_snapshots` holds every capture with its timestamp, so "what wa
 of the 5am run" is a lookup, and `water_readings` / `wave_readings` hold what actually happened. Fit
 the curve per variable and the taper stops being a tuning knob.
 
-**Expect wind and swell to decay at very different rates**, which is why they cannot share a curve.
-Wind error is local and turns over fast — the land breeze gives way to a sea breeze around midday
-(median 13:00, `status-hub/docs/ALARMS.md`). Swell is inertial: a swell running bigger than forecast
-stays bigger for many hours. 2026-09-22 shows both — the wind ran 50 degrees off the model for six
-straight hours while the swell was byte-identical in every capture of that morning.
+**WIND ONLY. Swell is not corrected here and is not meant to be.** The buoys' swell partition at
+Mayport barely moves — 0.3 to 0.7 ft across the whole archive — so there is almost nothing to diverge,
+and it is not on the same footing as Surfline's swell figure anyway: the buoys sit 22 and 30 miles
+offshore in deep water while the forecast is for the spot, so a difference between them is mostly two
+different places rather than a model being wrong. Anyone reviving this should establish that offset
+before reading anything into a gap.
+
+That leaves wind, which is the right instrument regardless: it is local, it turns over fast, and it is
+what moves the rating here. 2026-09-22 is the case — the wind ran 50 degrees off the model for six
+straight hours, and Surfline's own later revision of that morning moved on wind direction alone with
+the swell byte-identical in every capture.
 
 **There is no labelling to do, and no rating to collect.** Surfline RE-RATES ITS OWN PAST once
 observations are in, and every capture is archived, so the final rating for an hour is the label —
