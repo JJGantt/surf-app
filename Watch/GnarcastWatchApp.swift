@@ -57,10 +57,6 @@ final class Model: ObservableObject {
 /// spoke marks the hour in question: now, or whatever the crown has scrubbed to.
 struct EdgeDial: View {
     let day: Live.Day
-    /// The INNER band, one hex per hour from 6am, nil where there is no reading. It is the RAIN
-    /// chance rather than the wave height: the height is already written as a figure at every hour,
-    /// so a band repeating it spends the ring's second ring saying the same thing twice.
-    var rain: [String?]
     var at: Double?
     var numbers: Bool
     var inset: CGFloat = 3
@@ -90,7 +86,7 @@ struct EdgeDial: View {
                 // by a hair, since abutting strokes on fractional pixels antialias into pale seams,
                 // which is the very thing the fade exists to remove.
                 let rate = Self.ramp(day.hours) { $0.color }
-                let size = Self.ramp(hex: rain)
+                let size = Self.ramp(day.hours) { $0.size_color }
                 let steps = 144
                 for k in 0..<steps {
                     let f0 = CGFloat(k) / CGFloat(steps), f1 = CGFloat(k + 1) / CGFloat(steps)
@@ -243,8 +239,17 @@ struct LiveView: View {
     /// DETENTS PER DAY, and it is what sets the crown's speed. Bound straight to the day index, ten
     /// days is the crown's entire travel and a flick lands three days from the one you wanted.
     private static let perDay = 4.0
-    /// 0 the live readings, 1 the grid of every day.
-    @State private var pane = 0
+    /// THE GRID IS THE MIDDLE PANE AND THE DEFAULT: the week is the question the app is opened with,
+    /// and both of the others hang off it — the day's own detail to the LEFT, the rain to the RIGHT.
+    ///
+    /// WAVE HEIGHT IS ALWAYS PAIRED WITH THE RATING. The ring's second band and the grid's second
+    /// band are the same measure, or the two panes mean different things by the same blue. That is
+    /// why rain is a pane of its own rather than a band on the dial.
+    @State private var pane = 1
+    private static let panes = 3
+    /// How wide a pane is, and it is the width of the CLEAR MIDDLE — the ring's hourly figures sit
+    /// about 45 points in from each edge, so anything wider paints over them as it slides past.
+    private static let paneW: CGFloat = 128
     /// The numbers round the edge, on by default; a long press puts them away for the bands alone.
     @AppStorage("showNumbers") private var showNumbers = true
 
@@ -257,18 +262,25 @@ struct LiveView: View {
                 // words, and a label is the wrong instrument for it whatever it says: a word anywhere
                 // near the middle is read as qualifying those numbers. A clock hand pointing at no
                 // hour already means these are not the hours you are in.
-                EdgeDial(day: days[i],
-                         rain: (6..<18).map { l.weather?.hex(date: days[i].date, hour: $0) },
-                         at: days[i].today ? l.now_hour : nil, numbers: showNumbers)
-                if pane == 1 {
-                    grid(days, selected: i)
-                } else if days[i].today {
-                    middle(l)
-                } else {
-                    // A day that has not happened has nothing measured in it, so the live block is
-                    // not an option: what stands in its place is that day's own forecast.
-                    summary(days[i])
+                EdgeDial(day: days[i], at: days[i].today ? l.now_hour : nil, numbers: showNumbers)
+                // THE PANES PAN. All three are laid out side by side and the row is offset to bring
+                // one into view, so a swipe drags the next one in from the edge rather than swapping
+                // it in place — which is what says they sit beside each other rather than being three
+                // unrelated screens. Clipped to one pane's width, or the neighbours paint out over
+                // the ring's own figures.
+                HStack(spacing: 0) {
+                    dayPane(l, days[i]).frame(width: Self.paneW)
+                    grid(days, selected: i).frame(width: Self.paneW)
+                    Group {
+                        if let w = l.weather { rainPane(w, selected: days[i].date) } else { Color.clear }
+                    }
+                    .frame(width: Self.paneW)
                 }
+                .frame(width: Self.paneW * 3)
+                .offset(x: CGFloat(1 - pane) * Self.paneW)
+                .frame(width: Self.paneW)
+                .clipped()
+                .animation(.easeOut(duration: 0.22), value: pane)
             } else if model.loading {
                 ProgressView()
             } else {
@@ -284,24 +296,36 @@ struct LiveView: View {
         // actually changes.
         .digitalCrownRotation($crown, from: 0, through: Double(max(1, days.count - 1)) * Self.perDay,
                               by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: false)
+        // The green crown indicator that slides in on every turn. It is a scroll position, and there
+        // is nothing here to scroll — the day it is choosing is already said by the ring and the grid.
+        .digitalCrownAccessory(.hidden)
         .onChange(of: crown) { _, v in
             let d = Int((v / Self.perDay).rounded())
             guard d != day else { return }
             day = d
             WKInterfaceDevice.current().play(.click)
         }
-        // A swipe, not a TabView: the crown is already bound here, and watchOS's paging styles want
-        // it for themselves.
-        .gesture(DragGesture(minimumDistance: 18).onEnded { g in
+        // THREE GESTURES ON ONE VIEW, AND THE ORDER THEY RESOLVE IN IS THE WHOLE POINT. A plain
+        // `.onTapGesture` beside `.onLongPressGesture` loses most first taps: the long press claims
+        // the touch and waits out its duration before anyone else is asked, so the tap is swallowed
+        // and only a second, luckier tap gets through.
+        //
+        // ExclusiveGesture tries the TAP FIRST and only falls to the long press when the tap fails,
+        // which is exactly the intent. The drag is SIMULTANEOUS rather than in that chain, because a
+        // gesture that has to fail before a tap is considered delays every tap by its own threshold.
+        //
+        // A swipe rather than a TabView, still: the crown is bound to this view and watchOS's paging
+        // styles want it for themselves.
+        .simultaneousGesture(DragGesture(minimumDistance: 18).onEnded { g in
             guard abs(g.translation.width) > abs(g.translation.height),
                   abs(g.translation.width) > 28 else { return }
-            withAnimation(.easeOut(duration: 0.18)) { pane = g.translation.width < 0 ? 1 : 0 }
+            pane = min(Self.panes - 1, max(0, pane + (g.translation.width < 0 ? 1 : -1)))
         })
-        // Back to today, because opening the app asks about now. The crown goes with it or the next
-        // click resumes from wherever it was left days ago.
-        .onTapGesture { today(); model.refresh() }
+        // Back to today, and never a change of pane: the pane is where he put it.
+        .gesture(ExclusiveGesture(
+            TapGesture().onEnded { today(); model.refresh() },
+            LongPressGesture(minimumDuration: 0.6).onEnded { _ in showNumbers.toggle() }))
         .onChange(of: model.live?.generated_at) { _, _ in today() }
-        .onLongPressGesture(minimumDuration: 0.5) { showNumbers.toggle() }
     }
 
     /// IT OPENS ON TODAY, always — `days[0]`. Late in the evening that is a ring whose twelve hours
@@ -310,6 +334,12 @@ struct LiveView: View {
     /// than one showing a finished day honestly.
     private func today() {
         day = 0; crown = 0
+    }
+
+    /// The day's own pane: what is MEASURED when the crown is on today, and that day's forecast when
+    /// it is not — a day that has not happened has nothing measured in it.
+    @ViewBuilder private func dayPane(_ l: Live, _ d: Live.Day) -> some View {
+        if d.today { middle(l) } else { summary(d) }
     }
 
     /// A DAY THAT IS NOT TODAY, in the live block's place: how big, how good, and the wind, all of it
@@ -432,6 +462,57 @@ struct LiveView: View {
                 var p = Path()
                 p.move(to: CGPoint(x: x(selected) + cw / 2, y: headH))
                 p.addLine(to: CGPoint(x: x(selected) + cw / 2, y: size.height))
+                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: 1.5))
+            }
+        }
+        .frame(width: 118, height: 126)
+    }
+
+    /// RAIN, ITS OWN PANE. The same grammar as the grid beside it — a day per column, 6am at the
+    /// bottom, one seam before each Sunday, the crown's day a white line with its letter in white —
+    /// so the two read as two views of one week rather than two different charts.
+    ///
+    /// It is SEVEN columns, not ten: the rain forecast is shorter than the surf one, and showing three
+    /// empty columns to match would say the week ends in drought rather than that nothing is known.
+    /// Under each column is that day's HIGHEST chance in the drawn hours, which is the number anyone
+    /// actually asks of a rain forecast.
+    @ViewBuilder private func rainPane(_ w: Live.Weather, selected: String?) -> some View {
+        Canvas { ctx, size in
+            let n = max(1, w.cols.count)
+            let weekGap: CGFloat = 1, over: CGFloat = 0.6
+            let sundays = w.cols.indices.filter { $0 > 0 && Self.isSunday(w.cols[$0]) }
+            let cw = (size.width - CGFloat(sundays.count) * weekGap) / CGFloat(n)
+            let x = { (i: Int) in
+                CGFloat(i) * cw + CGFloat(sundays.filter { $0 <= i }.count) * weekGap
+            }
+            let headH: CGFloat = 11, footH: CGFloat = 12
+            let ch = (size.height - headH - footH) / 12
+            let y = { (h: Int) in headH + CGFloat(17 - h) * ch }
+            for (i, date) in w.cols.enumerated() {
+                let on = date == selected
+                ctx.draw(Text(String(Self.weekday(date).prefix(1)))
+                            .font(.system(size: 8, weight: on ? .heavy : .semibold))
+                            .foregroundColor(on ? .white : .secondary),
+                         at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
+                let dx = (i + 1 < n && !sundays.contains(i + 1)) ? over : 0
+                var peak: Int? = nil
+                for h in 6..<18 {
+                    guard let v = w.level(date: date, hour: h) else { continue }
+                    peak = max(peak ?? 0, v)
+                    let dy: CGFloat = h > 6 ? over : 0
+                    ctx.fill(Path(CGRect(x: x(i), y: y(h), width: cw + dx, height: ch + dy)),
+                             with: .color(Color(hex: w.colors[v])))
+                }
+                if let p = peak {
+                    ctx.draw(Text("\(w.percent(p))").font(.system(size: 8, weight: on ? .heavy : .semibold))
+                                .foregroundColor(on ? .white : .secondary),
+                             at: CGPoint(x: x(i) + cw / 2, y: size.height - footH / 2))
+                }
+            }
+            if let selected, let i = w.cols.firstIndex(of: selected) {
+                var p = Path()
+                p.move(to: CGPoint(x: x(i) + cw / 2, y: headH))
+                p.addLine(to: CGPoint(x: x(i) + cw / 2, y: size.height - footH))
                 ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: 1.5))
             }
         }

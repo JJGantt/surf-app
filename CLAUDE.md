@@ -66,6 +66,18 @@ remove. The day's own boundary never fades: that edge stays hard.
 THE NOW-BAR STOPS AT 0.84 of the radius. The sea, swell and water lines reach about 0.78 at the
 sides, so a longer one strikes through them — at 3pm it lands across the water temperature.
 
+THREE PANES THAT PAN, and the GRID is the middle one and the default — the week is the question the
+app is opened with, and the other two hang off it: the day's own detail LEFT, the rain RIGHT. All
+three are laid out side by side in a row that is offset to bring one into view, so a swipe drags the
+next in from the edge rather than swapping it in place. Clipped to `paneW`, which is the width of the
+CLEAR MIDDLE — the ring's hourly figures sit about 45 points in from each edge and a wider pane paints
+over them as it slides past.
+
+THE RAIN PANE is seven columns, not ten: the rain forecast is shorter than the surf one, and padding
+it to match would say the week ends in drought rather than that nothing is known. Under each column is
+that day's HIGHEST chance in the drawn hours, which is the number anyone actually asks of a rain
+forecast.
+
 TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY — today out to the end of the forecast
 — and the ring redraws for it. A horizontal SWIPE picks what the MIDDLE says, and nothing else:
 the live readings, or every day at once as a grid. Either pane works on any day, because the two
@@ -83,9 +95,15 @@ PHONE's timezone, so a spoke placed locally lands on the wrong hour the moment h
 THE CROWN'S SPEED IS ITS RANGE. Bound straight to the day index, ten days is the crown's whole travel
 and a flick lands three days from the one you wanted; `perDay` gives each day four detents. The day
 label carries its DATE as well as its weekday (`FRI 9/25`), because Friday comes round twice in ten
-days and the span crosses a month. A long press hides the edge numbers for the bands alone; a tap
-refreshes and goes back to today, which is also where a refresh lands, because opening the app asks
-about now.
+days and the span crosses a month. A long press hides the edge numbers for the bands alone; a tap refreshes and goes back to today —
+never changing the pane, which is where he put it.
+
+THE GESTURES' RESOLUTION ORDER IS LOAD-BEARING. A plain `.onTapGesture` beside `.onLongPressGesture`
+loses most FIRST taps: the long press claims the touch and waits out its duration before anything else
+is asked. They are an `ExclusiveGesture` with the tap first, and the drag is SIMULTANEOUS rather than
+in that chain, because a gesture that must fail before a tap is considered delays every tap by its own
+threshold. The crown's own green accessory is hidden (`digitalCrownAccessory(.hidden)`) — it is a
+scroll position and there is nothing here to scroll.
 
 THE GRID PANE is the hub's own heat map turned to fit a square screen — a day per COLUMN, an hour per
 row, the rating band over the height band on the same blue, and the water across the same columns.

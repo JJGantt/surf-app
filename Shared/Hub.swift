@@ -109,14 +109,23 @@ struct Live: Decodable {
         let pop: String
         let colors: [String]
 
-        /// The hour's colour on a given day, or nil where there is no reading.
-        func hex(date: String, hour: Int) -> String? {
+        /// The hour's level, 0 to `colors.count - 1`, or nil where there is no reading.
+        func level(date: String, hour: Int) -> Int? {
             guard let c = cols.firstIndex(of: date) else { return nil }
             let i = c * 24 + hour
             let ch = Array(pop)
             guard i >= 0, i < ch.count, ch[i] != "." else { return nil }
             guard let v = Int(String(ch[i]), radix: 36), v >= 0, v < colors.count else { return nil }
-            return colors[v]
+            return v
+        }
+
+        func hex(date: String, hour: Int) -> String? {
+            level(date: date, hour: hour).map { colors[$0] }
+        }
+
+        /// The level as a percentage. The ramp is `colors.count` steps across 0-100.
+        func percent(_ level: Int) -> Int {
+            colors.count > 1 ? Int((Double(level) / Double(colors.count - 1) * 100).rounded()) : 0
         }
     }
     let wind: Wind?
