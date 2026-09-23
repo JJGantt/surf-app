@@ -22,19 +22,20 @@ The band follows the SCREEN'S OWN rounded-square border (`EdgeDial`), not a circ
 a circle wastes the corners and stops short of the bezel. It is not a clock either: the whole way
 round is 6am to 6pm, 6am at the bottom, up the left, noon at the top, down the right to 6pm, because
 that is the day worth surfing. The hub sends every day of the forecast (`days` in `surfLive`), each
-one those thirteen hours, plus that day's water at local noon for the grid pane's plot. Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
+one those twelve hours, plus that day's water at local noon for the grid pane's plot. Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
 hour — the height that breaks, to a decimal, and the wind, bare because its colour is its direction.
 The exact height earns its place because Surfline's range is coarse: a whole morning reads `1-2 ft`
 while the raw numbers climb 1.5, 1.6, 1.5 through it. Swell PERIOD is not drawn per hour — it moves a
 median of one second across a daylight day here, and 10-12s and 12-20s hours rate the same, so twelve
 of them would be one number written twelve times.
 
-THIRTEEN SLOTS, NOT TWELVE, and the arithmetic is the whole reason. 6am to 6pm INCLUSIVE is thirteen
-hourly readings; give them thirteen slots and each hour owns the block `slot/13` to `(slot+1)/13`, so
-the day's BOUNDARY lands at 0 — bottom centre, the clean vertical — and noon's block is centred at
-6.5/13, which is exactly 0.5, the top. Twelve slots can do neither: 6pm falls back on 6am's own mark,
-and the join between the last hour and the first ends up half an hour clockwise of the bottom, in a
-notch that reads as an accident. The hub sends exactly these hours.
+IT IS A CLOCK FACE. TWELVE SLOTS, NEVER ANOTHER NUMBER — an hour is a twelfth of the ring and sits
+where a clock puts it: 6 at the BOTTOM, 9 at the LEFT, 12 at the TOP, 3 at the RIGHT. It is worn on a
+wrist beside a watch face, and any other count makes a position stop meaning a time. 6am and 6pm
+SHARE the bottom, exactly as they do on a clock, and that shared point is the day's boundary — which
+is why it lands on the vertical with nothing contrived to put it there. An hour owns the block from
+its own mark to the next, so the twelfth runs 5pm to 6pm and the ring covers 6am to 6pm while only
+6am through 5pm carry marks.
 
 THE BOUNDARY IS TWO TICKS, and the pair is the whole signifier: warm on the morning side, cold on the
 evening side, so which way the day runs is read off the colour with nothing to learn and no room
@@ -42,8 +43,10 @@ spent. A sunrise glyph is the obvious alternative and there is nowhere to put it
 hours' own figures sit either side of the boundary, and at the bottom of the ring pulling a mark
 inward moves it straight at them.
 
-EACH HOUR'S NUMBERS SIT AT ITS BLOCK'S CENTRE, which is also where the spoke lands at that hour, so
-the reading, the band and the clock all point at the same place.
+EACH HOUR'S NUMBERS SIT AT ITS OWN MARK, the leading edge of its block, which is where the spoke
+stands at that hour — so the reading, its block and the clock hand all agree. Centring the block on
+the mark instead puts the last half hour of the day before the first half hour of it, and leaves no
+edge at the bottom to call a boundary.
 
 TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY — today out to the end of the forecast
 — and the ring redraws for it. A horizontal SWIPE picks what the MIDDLE says, and nothing else:

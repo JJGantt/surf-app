@@ -44,12 +44,12 @@ final class Model: ObservableObject {
 /// way round is 6am to 6pm — up the left side, noon at the TOP, down the right — because those are the
 /// hours worth surfing.
 ///
-/// THIRTEEN SLOTS, NOT TWELVE, and the arithmetic is the whole reason. 6am to 6pm INCLUSIVE is
-/// thirteen hourly readings. Give them thirteen slots and each hour owns the block from `slot/13` to
-/// `(slot+1)/13`, so the day's BOUNDARY falls at 0 — bottom centre, the clean vertical — and noon's
-/// block is centred at 6.5/13, which is exactly 0.5, the top. Twelve slots can do neither: 6pm lands
-/// back on 6am's own mark, and the join between the last hour and the first ends up half an hour
-/// clockwise of the bottom, in a notch that reads as an accident.
+/// IT IS A CLOCK FACE, and that fixes everything about the geometry. Twelve hours, so an hour is a
+/// twelfth of the ring and every hour sits where a clock puts it: 6 at the BOTTOM, 9 at the LEFT, 12
+/// at the TOP, 3 at the RIGHT. Any other number of slots and a position stops meaning a time.
+///
+/// 6am and 6pm therefore SHARE the bottom, exactly as they do on a clock, and that shared point is
+/// the day's boundary — which is why it needs no contriving to land on the vertical.
 ///
 /// Outside in: the RATING band, the wave HEIGHT band on the heat map's own blue, then two numbers an
 /// hour — the height that breaks, exact, and the wind, bare because its colour is its direction. A
@@ -74,12 +74,14 @@ struct EdgeDial: View {
             let numRect = inner.insetBy(dx: sizeWidth / 2 + 13, dy: sizeWidth / 2 + 13)
             let numberRing = Self.border(numRect, max(2, radius - width - between - sizeWidth - 13))
             Canvas { ctx, _ in
-                // EACH HOUR OWNS ITS OWN BLOCK and its number sits at the block's centre, which is
-                // also where the spoke lands at that hour — so the reading, the band and the clock all
-                // point at the same place. The blocks tile the ring exactly, which is what leaves a
-                // real edge at 0 for the day's boundary.
+                // AN HOUR OWNS THE BLOCK FROM ITS OWN MARK TO THE NEXT — 3pm covers the arc from the
+                // 3 position to the 4, the way an hour occupies a clock. Its NUMBER sits at its mark,
+                // at the leading edge, which is where the spoke stands at that hour: so the reading,
+                // its block and the clock hand all agree. Centring the block on the mark instead puts
+                // the last half hour of the day before the first half hour of it, and there is then no
+                // edge at the bottom to call a boundary.
                 let gap = 0.004          // a hair between hours, so the stretches read as separate
-                for h in day.hours where h.h >= 6 && h.h <= 18 {
+                for h in day.hours where h.h >= 6 && h.h < 18 {
                     let slot = CGFloat(h.h - 6)
                     let a = slot / Self.slots + gap, b = (slot + 1) / Self.slots - gap
                     ctx.stroke(ring.trimmedPath(from: a, to: b), with: .color(Color(hex: h.color)),
@@ -109,8 +111,8 @@ struct EdgeDial: View {
 
                 // The hour in question: a spoke from just outside the rating band inward past the
                 // numbers, drawn BEFORE them so a number is never covered by it.
-                if let hour = at, hour >= 5.5, hour <= 18.5 {
-                    let f = CGFloat(hour - 5.5) / Self.slots
+                if let hour = at, hour >= 6, hour <= 18 {
+                    let f = CGFloat(hour - 6) / Self.slots
                     let onRing = ring.trimmedPath(from: max(0, f - 0.0005), to: min(1, f + 0.0005))
                     if let p = onRing.currentPoint {
                         let centre = CGPoint(x: rect.midX, y: rect.midY)
@@ -123,8 +125,8 @@ struct EdgeDial: View {
                 }
 
                 guard numbers else { return }
-                for h in day.hours where h.h >= 6 && h.h <= 18 {
-                    let mid = (CGFloat(h.h - 6) + 0.5) / Self.slots
+                for h in day.hours where h.h >= 6 && h.h < 18 {
+                    let mid = CGFloat(h.h - 6) / Self.slots
                     let p = numberRing.trimmedPath(from: max(0, mid - 0.0005), to: min(1, mid + 0.0005))
                     guard let point = p.currentPoint else { continue }
                     if let ft = h.ft_exact {
@@ -142,8 +144,9 @@ struct EdgeDial: View {
         }
     }
 
-    /// 6am through 6pm inclusive.
-    static let slots: CGFloat = 13
+    /// Twelve, because it is a clock. 6am through 5pm each own the block from their own mark to the
+    /// next, so the last runs 5pm to 6pm and the ring covers 6am to 6pm.
+    static let slots: CGFloat = 12
 
     /// The border drawn from BOTTOM CENTRE, clockwise — so 6am starts at the bottom and noon lands at
     /// the top. The corner radius is the screen's, near enough that the band keeps the same distance
@@ -296,7 +299,7 @@ struct LiveView: View {
                          at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
             }
             for (i, d) in days.enumerated() {
-                for h in d.hours where h.h >= 6 && h.h <= 18 {
+                for h in d.hours where h.h >= 6 && h.h < 18 {
                     let y = headH + CGFloat(h.h - 6) * ch
                     ctx.fill(Path(CGRect(x: x(i), y: y, width: cw, height: ch)),
                              with: .color(Color(hex: h.color)))
