@@ -48,6 +48,16 @@ stands at that hour — so the reading, its block and the clock hand all agree. 
 the mark instead puts the last half hour of the day before the first half hour of it, and leaves no
 edge at the bottom to call a boundary.
 
+THE BAND IS ONE CONTINUOUS RIBBON, not twelve tiles. The colour holds flat across the middle of each
+hour and crosses to the next over a fade centred on the join, so a morning that improves reads as a
+sweep. Drawn as 144 short strokes with an interpolated colour rather than a gradient, because Canvas
+will not run a gradient along an arbitrary path — and each stroke overruns the next by a hair, since
+abutting strokes on fractional pixels antialias into exactly the pale seams the fade exists to
+remove. The day's own boundary never fades: that edge stays hard.
+
+THE NOW-BAR STOPS AT 0.84 of the radius. The sea, swell and water lines reach about 0.78 at the
+sides, so a longer one strikes through them — at 3pm it lands across the water temperature.
+
 TWO GESTURES, TWO INDEPENDENT THINGS. The CROWN picks the DAY — today out to the end of the forecast
 — and the ring redraws for it. A horizontal SWIPE picks what the MIDDLE says, and nothing else:
 the live readings, or every day at once as a grid. Either pane works on any day, because the two

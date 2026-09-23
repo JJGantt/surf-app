@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 @main
 struct GnarcastWatchApp: App {
@@ -74,20 +75,29 @@ struct EdgeDial: View {
             let numRect = inner.insetBy(dx: sizeWidth / 2 + 13, dy: sizeWidth / 2 + 13)
             let numberRing = Self.border(numRect, max(2, radius - width - between - sizeWidth - 13))
             Canvas { ctx, _ in
-                // AN HOUR OWNS THE BLOCK FROM ITS OWN MARK TO THE NEXT — 3pm covers the arc from the
-                // 3 position to the 4, the way an hour occupies a clock. Its NUMBER sits at its mark,
-                // at the leading edge, which is where the spoke stands at that hour: so the reading,
-                // its block and the clock hand all agree. Centring the block on the mark instead puts
-                // the last half hour of the day before the first half hour of it, and there is then no
-                // edge at the bottom to call a boundary.
-                let gap = 0.004          // a hair between hours, so the stretches read as separate
-                for h in day.hours where h.h >= 6 && h.h < 18 {
-                    let slot = CGFloat(h.h - 6)
-                    let a = slot / Self.slots + gap, b = (slot + 1) / Self.slots - gap
-                    ctx.stroke(ring.trimmedPath(from: a, to: b), with: .color(Color(hex: h.color)),
-                               style: StrokeStyle(lineWidth: width, lineCap: .butt))
-                    if let sc = h.size_color {
-                        ctx.stroke(sizeRing.trimmedPath(from: a, to: b), with: .color(Color(hex: sc)),
+                // ONE CONTINUOUS RIBBON. An hour still owns the arc from its own mark to the next,
+                // but the colour does not step at the join — it holds flat across the middle of each
+                // hour and crosses to the next one over a short fade centred on the boundary, so a
+                // morning that improves reads as a sweep rather than twelve tiles. Both bands do it:
+                // the rating's reds through greens and the height's blues alike.
+                //
+                // Drawn as many short strokes rather than a gradient, because a gradient along an
+                // arbitrary path is not something Canvas will do — and each stroke overruns the next
+                // by a hair, since abutting strokes on fractional pixels antialias into pale seams,
+                // which is the very thing the fade exists to remove.
+                let rate = Self.ramp(day.hours) { $0.color }
+                let size = Self.ramp(day.hours) { $0.size_color }
+                let steps = 144
+                for k in 0..<steps {
+                    let f0 = CGFloat(k) / CGFloat(steps), f1 = CGFloat(k + 1) / CGFloat(steps)
+                    let u = (Double(k) + 0.5) / Double(steps) * 12
+                    let to = min(1, f1 + 0.004)
+                    if let c = Self.colourAt(u, rate) {
+                        ctx.stroke(ring.trimmedPath(from: f0, to: to), with: .color(c),
+                                   style: StrokeStyle(lineWidth: width, lineCap: .butt))
+                    }
+                    if let c = Self.colourAt(u, size) {
+                        ctx.stroke(sizeRing.trimmedPath(from: f0, to: to), with: .color(c),
                                    style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
                     }
                 }
@@ -125,8 +135,12 @@ struct EdgeDial: View {
                         let centre = CGPoint(x: rect.midX, y: rect.midY)
                         let v = CGPoint(x: p.x - centre.x, y: p.y - centre.y)
                         var spoke = Path()
+                        // STOPS SHORT OF THE MIDDLE. The sea, swell and water lines run to about 0.78
+                        // of the radius at the sides, and a spoke reaching past that strikes through
+                        // them — at 3pm it lands straight across the water temperature. Far enough in
+                        // to cross both bands and reach the hour's own figures, and no further.
                         spoke.move(to: CGPoint(x: centre.x + v.x * 1.04, y: centre.y + v.y * 1.04))
-                        spoke.addLine(to: CGPoint(x: centre.x + v.x * 0.58, y: centre.y + v.y * 0.58))
+                        spoke.addLine(to: CGPoint(x: centre.x + v.x * 0.84, y: centre.y + v.y * 0.84))
                         ctx.stroke(spoke, with: .color(.white), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     }
                 }
@@ -149,6 +163,34 @@ struct EdgeDial: View {
                 }
             }
         }
+    }
+
+    /// The twelve hours' colours as RGB, indexed 0 = 6am, or nil where the hour is missing.
+    static func ramp(_ hours: [Live.Hour], _ pick: (Live.Hour) -> String?) -> [(Double, Double, Double)?] {
+        var out = [(Double, Double, Double)?](repeating: nil, count: 12)
+        for h in hours where h.h >= 6 && h.h < 18 {
+            guard let hex = pick(h) else { continue }
+            var v: UInt64 = 0
+            guard hex.hasPrefix("#"), let n = UInt64(hex.dropFirst(), radix: 16) else { continue }
+            v = n
+            out[h.h - 6] = (Double((v >> 16) & 0xff) / 255, Double((v >> 8) & 0xff) / 255, Double(v & 0xff) / 255)
+        }
+        return out
+    }
+
+    /// The colour at a continuous hour offset. Flat across the middle of an hour, crossing to its
+    /// neighbour over `fade` either side of the join — and NEVER across the day's own boundary, which
+    /// is the one edge that has to stay hard.
+    static func colourAt(_ u: Double, _ ramp: [(Double, Double, Double)?]) -> Color? {
+        let i = min(11, max(0, Int(u)))
+        guard let c = ramp[i] else { return nil }
+        let frac = u - Double(i), fade = 0.25
+        let mix = { (a: (Double, Double, Double), b: (Double, Double, Double), t: Double) in
+            Color(red: a.0 + (b.0 - a.0) * t, green: a.1 + (b.1 - a.1) * t, blue: a.2 + (b.2 - a.2) * t)
+        }
+        if frac < fade, i > 0, let prev = ramp[i - 1] { return mix(prev, c, 0.5 + (frac / fade) * 0.5) }
+        if frac > 1 - fade, i < 11, let next = ramp[i + 1] { return mix(c, next, (frac - (1 - fade)) / fade * 0.5) }
+        return Color(red: c.0, green: c.1, blue: c.2)
     }
 
     /// Twelve, because it is a clock. 6am through 5pm each own the block from their own mark to the
@@ -224,9 +266,18 @@ struct LiveView: View {
         .ignoresSafeArea()
         .contentShape(Rectangle())
         .focusable()
+        // THE CLICK IS OURS, NOT THE CROWN'S. The crown has four detents to a day so it can be
+        // aimed, and its own haptic fires on every one of them — four clicks for one day, so the
+        // feel and the picture disagree. Turned off, and one click played at the moment the day
+        // actually changes.
         .digitalCrownRotation($crown, from: 0, through: Double(max(1, days.count - 1)) * Self.perDay,
-                              by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-        .onChange(of: crown) { _, v in day = Int((v / Self.perDay).rounded()) }
+                              by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: false)
+        .onChange(of: crown) { _, v in
+            let d = Int((v / Self.perDay).rounded())
+            guard d != day else { return }
+            day = d
+            WKInterfaceDevice.current().play(.click)
+        }
         // A swipe, not a TabView: the crown is already bound here, and watchOS's paging styles want
         // it for themselves.
         .gesture(DragGesture(minimumDistance: 18).onEnded { g in
@@ -291,37 +342,45 @@ struct LiveView: View {
     @ViewBuilder private func grid(_ days: [Live.Day], selected: Int) -> some View {
         Canvas { ctx, size in
             let n = max(1, days.count)
-            // ONE CONTINUOUS FIELD OF COLOUR. Cells touch, and the only gaps left are the two that
-            // carry meaning: before each SUNDAY, so a week is countable, and at NOON, so the middle of
-            // the day can be found without counting rows. A gap everywhere is a grid ruled in black;
-            // a gap in two places is a pair of landmarks.
-            let pad: CGFloat = 1.5          // the selection outline needs somewhere to sit at each end
-            let weekGap: CGFloat = 2.5, noonGap: CGFloat = 2.5
+            // ONE CONTINUOUS FIELD OF COLOUR, with a single seam before each SUNDAY so a week is
+            // countable. It is the same hairline the cells all used to have — kept in one place rather
+            // than widened there, because a wider gap stops being a seam and becomes a bar drawn
+            // across the data.
+            let weekGap: CGFloat = 1
             let sundays = days.indices.filter { $0 > 0 && Self.isSunday(days[$0].date) }
-            let cw = (size.width - pad * 2 - CGFloat(sundays.count) * weekGap) / CGFloat(n)
+            let cw = (size.width - CGFloat(sundays.count) * weekGap) / CGFloat(n)
             let x = { (i: Int) in
-                pad + CGFloat(i) * cw + CGFloat(sundays.filter { $0 <= i }.count) * weekGap
+                CGFloat(i) * cw + CGFloat(sundays.filter { $0 <= i }.count) * weekGap
             }
             let headH: CGFloat = 11, waterH: CGFloat = 23
             let bandH = (size.height - headH - waterH) / 2
-            let ch = (bandH - noonGap) / 12
+            let ch = bandH / 12
             // EARLY AT THE BOTTOM, LATE AT THE TOP — 6am the bottom row, 5pm the top. That is the
             // ring's own orientation (6 o'clock is the bottom of a clock) and the hub's heat map's
             // (`y = base + GRID_H - h * ch` in cards/surf.js). Running it the other way makes the two
             // panes of this one screen disagree about which end of the day is which.
-            let y = { (h: Int, band: CGFloat) in
-                headH + band * bandH + CGFloat(17 - h) * ch + (h < 12 ? noonGap : 0)
-            }
+            let y = { (h: Int, band: CGFloat) in headH + band * bandH + CGFloat(17 - h) * ch }
+            // THE SELECTED DAY IS ITS LETTER IN WHITE, and nothing marks today: the grid always
+            // starts at today, so the first column says it without ink.
             for (i, d) in days.enumerated() {
                 let l = String(Self.weekday(d.date).prefix(1))
-                ctx.draw(Text(l).font(.system(size: 8, weight: d.today ? .heavy : .semibold))
-                            .foregroundColor(d.today ? .white : .secondary),
+                let on = i == selected
+                ctx.draw(Text(l).font(.system(size: 8, weight: on ? .heavy : .semibold))
+                            .foregroundColor(on ? .white : .secondary),
                          at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
+                // Cells OVERLAP by a hair. A column is a fraction of a point wide, so abutting rects
+                // land on fractional pixels and antialias into a pale seam at every edge — which reads
+                // as the grid still being ruled. The overlap is dropped where a real seam belongs:
+                // before a Sunday, and at the bottom row of each band, which would otherwise bleed
+                // into the band below.
+                let over: CGFloat = 0.6
+                let dx = (i + 1 < days.count && !sundays.contains(i + 1)) ? over : 0
                 for h in d.hours where h.h >= 6 && h.h < 18 {
-                    ctx.fill(Path(CGRect(x: x(i), y: y(h.h, 0), width: cw, height: ch)),
+                    let dy: CGFloat = h.h > 6 ? over : 0
+                    ctx.fill(Path(CGRect(x: x(i), y: y(h.h, 0), width: cw + dx, height: ch + dy)),
                              with: .color(Color(hex: h.color)))
                     if let sc = h.size_color {
-                        ctx.fill(Path(CGRect(x: x(i), y: y(h.h, 1), width: cw, height: ch)),
+                        ctx.fill(Path(CGRect(x: x(i), y: y(h.h, 1), width: cw + dx, height: ch + dy)),
                                  with: .color(Color(hex: sc)))
                     }
                 }
@@ -346,24 +405,22 @@ struct LiveView: View {
                                style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 }
                 let lastKnown = vals.lastIndex(where: { $0 != nil }) ?? 0
-                let right = size.width - pad
                 if lastKnown < days.count - 1 {
                     ctx.draw(Text(whole(hi)).font(.system(size: 8, weight: .semibold))
                                 .foregroundColor(.secondary),
-                             at: CGPoint(x: right - 7, y: pyTop))
+                             at: CGPoint(x: size.width - 8, y: pyTop))
                     ctx.draw(Text(whole(lo)).font(.system(size: 8, weight: .semibold))
                                 .foregroundColor(.secondary),
-                             at: CGPoint(x: right - 7, y: pyBot))
+                             at: CGPoint(x: size.width - 8, y: pyBot))
                 }
             }
-            // THE CROWN'S DAY IS OUTLINED, NOT STRUCK THROUGH. A line down the middle of a column
-            // covers the cells it is pointing at; a box round it leaves every cell visible. `pad` is
-            // what keeps the box's own edge on screen when the first or last day is the one selected.
+            // ONE WHITE LINE DOWN THE CROWN'S COLUMN, through the bands and the water alike, so the
+            // ring's day and the grid's are visibly the same day. Its letter above is white with it.
             if days.indices.contains(selected) {
-                let r = CGRect(x: x(selected) - pad, y: headH - 1, width: cw + pad * 2,
-                               height: size.height - headH + 1)
-                ctx.stroke(Path(roundedRect: r, cornerRadius: 2), with: .color(.white),
-                           style: StrokeStyle(lineWidth: 1.5))
+                var p = Path()
+                p.move(to: CGPoint(x: x(selected) + cw / 2, y: headH))
+                p.addLine(to: CGPoint(x: x(selected) + cw / 2, y: size.height))
+                ctx.stroke(p, with: .color(.white), style: StrokeStyle(lineWidth: 1.5))
             }
         }
         .frame(width: 118, height: 126)
