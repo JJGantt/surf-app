@@ -37,11 +37,11 @@ is why it lands on the vertical with nothing contrived to put it there. An hour 
 its own mark to the next, so the twelfth runs 5pm to 6pm and the ring covers 6am to 6pm while only
 6am through 5pm carry marks.
 
-THE BOUNDARY IS TWO TICKS, and the pair is the whole signifier: warm on the morning side, cold on the
-evening side, so which way the day runs is read off the colour with nothing to learn and no room
-spent. A sunrise glyph is the obvious alternative and there is nowhere to put it — the first and last
-hours' own figures sit either side of the boundary, and at the bottom of the ring pulling a mark
-inward moves it straight at them.
+THE BOUNDARY IS A LINE, with a SUNRISE clockwise of it and a SUNSET anticlockwise — the two sides of
+the day in the one vocabulary that needs no key. Neither symbol sits ON the boundary and neither can:
+6am is where the day starts, so the first hour's own figures and the join are the same point. They go
+in the clear arc either side instead. The line stops outside the numbers, because drawn through them
+it is a strikethrough on a figure.
 
 EACH HOUR'S NUMBERS SIT AT ITS OWN MARK, the leading edge of its block, which is where the spoke
 stands at that hour — so the reading, its block and the clock hand all agree. Centring the block on
@@ -69,11 +69,22 @@ days and the span crosses a month. A long press hides the edge numbers for the b
 refreshes and goes back to today, which is also where a refresh lands, because opening the app asks
 about now.
 
-THE GRID PANE is the hub's own heat map turned to fit a square screen — a day per COLUMN, an hour
-per row with 6am at the top: the rating band, the height band under it on the same blue, and the
-water across the same columns, each segment in its own day's colour. Each column is headed by its
-weekday letter with today's in full white, because ten unlabelled columns are a picture of nothing in
-particular and the reader cannot otherwise tell where the grid starts.
+THE GRID PANE is the hub's own heat map turned to fit a square screen — a day per COLUMN, an hour per
+row, the rating band over the height band on the same blue, and the water across the same columns.
+
+EARLY AT THE BOTTOM, LATE AT THE TOP: 6am the bottom row, 5pm the top. That is the ring's own
+orientation, since 6 o'clock is the bottom of a clock, and the hub's heat map's (`y = base + GRID_H -
+h * ch` in cards/surf.js). Running it the other way makes the two panes of one screen disagree about
+which end of the day is which, which is exactly how it reads as upside down.
+
+ONE CONTINUOUS FIELD OF COLOUR. Cells touch; the only gaps are the two that carry meaning — before
+each SUNDAY so a week is countable, and at NOON so the middle of the day is findable without counting
+rows. A gap everywhere is a grid ruled in black; a gap in two places is a pair of landmarks. Each
+column is headed by its weekday letter, today's in full white.
+
+THE WATER'S RANGE IS WRITTEN IN THE BLANK at the right, high and low. The marine model stops a few
+days short of the surf forecast, so the last columns carry no line — and a line with no scale beside
+it says only that the water changed, not to what.
 
 THE CROWN'S DAY IS OUTLINED, NOT STRUCK THROUGH. A line down the middle of a column covers the cells
 it is pointing at and reads as an artefact of the drawing; a box round the column says selected and

@@ -92,21 +92,28 @@ struct EdgeDial: View {
                     }
                 }
 
-                // THE DAY'S BOUNDARY, on the vertical: where 6pm meets 6am. TWO TICKS, NOT ONE, and
-                // the pair is the whole signifier — warm on the morning side, cold on the evening
-                // side, so the direction the day runs is read off the colour with nothing to learn and
-                // no room spent. A sunrise glyph was the obvious alternative and there is nowhere to
-                // put it: the first and last hours' own figures sit either side of the boundary, and at
-                // the bottom of the ring pulling a mark inward moves it straight at them.
-                for (f, c) in [(0.006, Color.orange), (-0.006, Color(red: 0.36, green: 0.42, blue: 0.85))] {
-                    let at = f < 0 ? 1 + f : f
-                    guard let p = ring.trimmedPath(from: at, to: at + 0.0005).currentPoint else { continue }
-                    let ctr = CGPoint(x: rect.midX, y: rect.midY)
-                    let v = CGPoint(x: p.x - ctr.x, y: p.y - ctr.y)
-                    var tick = Path()
-                    tick.move(to: CGPoint(x: ctr.x + v.x * 1.05, y: ctr.y + v.y * 1.05))
-                    tick.addLine(to: CGPoint(x: ctr.x + v.x * 0.88, y: ctr.y + v.y * 0.88))
-                    ctx.stroke(tick, with: .color(c), style: StrokeStyle(lineWidth: 2, lineCap: .butt))
+                // THE DAY'S BOUNDARY: a LINE on the vertical where 6pm meets 6am, with a sunrise
+                // clockwise of it and a sunset anticlockwise — the two sides of the day, said in the
+                // one vocabulary that needs no key.
+                //
+                // Neither symbol can sit ON the boundary, because the first hour's own figures are
+                // already there: 6am is where the day starts, so its numbers and the join are the same
+                // point. They go in the 30 degrees of clear arc either side instead, between the 6am
+                // figures and the 7am ones going one way and past the 5pm figures the other.
+                if let p = ring.trimmedPath(from: 0, to: 0.0005).currentPoint {
+                    let c = CGPoint(x: rect.midX, y: rect.midY)
+                    let v = CGPoint(x: p.x - c.x, y: p.y - c.y)
+                    var line = Path()
+                    // Stops OUTSIDE the numbers: the first hour's figures are directly beneath it,
+                    // and a line drawn through them is a strikethrough on a number.
+                    line.move(to: CGPoint(x: c.x + v.x * 1.06, y: c.y + v.y * 1.06))
+                    line.addLine(to: CGPoint(x: c.x + v.x * 0.94, y: c.y + v.y * 0.94))
+                    ctx.stroke(line, with: .color(.white), style: StrokeStyle(lineWidth: 2, lineCap: .butt))
+                }
+                for (f, name, tint) in [(CGFloat(0.042), "sunrise.fill", Color.orange),
+                                        (CGFloat(0.958), "sunset.fill", Color(red: 0.55, green: 0.6, blue: 0.95))] {
+                    guard let p = numberRing.trimmedPath(from: f, to: f + 0.0005).currentPoint else { continue }
+                    ctx.draw(Text(Image(systemName: name)).font(.system(size: 9)).foregroundColor(tint), at: p)
                 }
 
                 // The hour in question: a spoke from just outside the rating band inward past the
@@ -283,41 +290,53 @@ struct LiveView: View {
     /// the numbers out at the edge.
     @ViewBuilder private func grid(_ days: [Live.Day], selected: Int) -> some View {
         Canvas { ctx, size in
-            let n = max(1, days.count), gap: CGFloat = 1
-            let cw = (size.width - CGFloat(n - 1) * gap) / CGFloat(n)
-            let headH: CGFloat = 11, waterH: CGFloat = 20, between: CGFloat = 4
-            let bandH = (size.height - headH - waterH - between * 2) / 2
-            let ch = bandH / EdgeDial.slots
-            let x = { (i: Int) in CGFloat(i) * (cw + gap) }
-            // A COLUMN IS A DAY and needs saying: ten unlabelled columns are a picture of nothing in
-            // particular. One letter each, and today's in full white — where the grid starts is the
-            // other thing a reader cannot work out from the colours.
+            let n = max(1, days.count)
+            // ONE CONTINUOUS FIELD OF COLOUR. Cells touch, and the only gaps left are the two that
+            // carry meaning: before each SUNDAY, so a week is countable, and at NOON, so the middle of
+            // the day can be found without counting rows. A gap everywhere is a grid ruled in black;
+            // a gap in two places is a pair of landmarks.
+            let pad: CGFloat = 1.5          // the selection outline needs somewhere to sit at each end
+            let weekGap: CGFloat = 2.5, noonGap: CGFloat = 2.5
+            let sundays = days.indices.filter { $0 > 0 && Self.isSunday(days[$0].date) }
+            let cw = (size.width - pad * 2 - CGFloat(sundays.count) * weekGap) / CGFloat(n)
+            let x = { (i: Int) in
+                pad + CGFloat(i) * cw + CGFloat(sundays.filter { $0 <= i }.count) * weekGap
+            }
+            let headH: CGFloat = 11, waterH: CGFloat = 23
+            let bandH = (size.height - headH - waterH) / 2
+            let ch = (bandH - noonGap) / 12
+            // EARLY AT THE BOTTOM, LATE AT THE TOP — 6am the bottom row, 5pm the top. That is the
+            // ring's own orientation (6 o'clock is the bottom of a clock) and the hub's heat map's
+            // (`y = base + GRID_H - h * ch` in cards/surf.js). Running it the other way makes the two
+            // panes of this one screen disagree about which end of the day is which.
+            let y = { (h: Int, band: CGFloat) in
+                headH + band * bandH + CGFloat(17 - h) * ch + (h < 12 ? noonGap : 0)
+            }
             for (i, d) in days.enumerated() {
                 let l = String(Self.weekday(d.date).prefix(1))
                 ctx.draw(Text(l).font(.system(size: 8, weight: d.today ? .heavy : .semibold))
                             .foregroundColor(d.today ? .white : .secondary),
                          at: CGPoint(x: x(i) + cw / 2, y: headH / 2))
-            }
-            for (i, d) in days.enumerated() {
                 for h in d.hours where h.h >= 6 && h.h < 18 {
-                    let y = headH + CGFloat(h.h - 6) * ch
-                    ctx.fill(Path(CGRect(x: x(i), y: y, width: cw, height: ch)),
+                    ctx.fill(Path(CGRect(x: x(i), y: y(h.h, 0), width: cw, height: ch)),
                              with: .color(Color(hex: h.color)))
                     if let sc = h.size_color {
-                        ctx.fill(Path(CGRect(x: x(i), y: bandH + between + y, width: cw, height: ch)),
+                        ctx.fill(Path(CGRect(x: x(i), y: y(h.h, 1), width: cw, height: ch)),
                                  with: .color(Color(hex: sc)))
                     }
                 }
             }
-            // THE WATER, one point a day over the same columns, each segment in its own day's colour
-            // so the line reads warm or cold without a scale beside it. It stops where the marine
-            // model does, a few days short of the surf forecast.
-            let top = headH + bandH * 2 + between * 2
+            // THE WATER, one point a day over the same columns, each segment in its own day's colour.
+            // It stops where the marine model does, a few days short of the surf forecast — and the
+            // blank that leaves at the right is where its RANGE is written, since a line with no scale
+            // beside it says only that the water changed, not to what.
+            let top = headH + bandH * 2
             let vals = days.map(\.water_f)
             let known = vals.compactMap { $0 }
             if known.count > 1 {
                 let lo = known.min()!, hi = known.max()!, span = max(0.1, hi - lo)
-                let py = { (v: Double) in top + waterH - 3 - CGFloat((v - lo) / span) * (waterH - 6) }
+                let pyTop = top + 8, pyBot = top + waterH - 4
+                let py = { (v: Double) in pyBot - CGFloat((v - lo) / span) * (pyBot - pyTop) }
                 for i in 0..<(days.count - 1) {
                     guard let a = vals[i], let b = vals[i + 1] else { continue }
                     var p = Path()
@@ -326,18 +345,34 @@ struct LiveView: View {
                     ctx.stroke(p, with: .color(Color(hex: days[i].water_color)),
                                style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 }
+                let lastKnown = vals.lastIndex(where: { $0 != nil }) ?? 0
+                let right = size.width - pad
+                if lastKnown < days.count - 1 {
+                    ctx.draw(Text(whole(hi)).font(.system(size: 8, weight: .semibold))
+                                .foregroundColor(.secondary),
+                             at: CGPoint(x: right - 7, y: pyTop))
+                    ctx.draw(Text(whole(lo)).font(.system(size: 8, weight: .semibold))
+                                .foregroundColor(.secondary),
+                             at: CGPoint(x: right - 7, y: pyBot))
+                }
             }
             // THE CROWN'S DAY IS OUTLINED, NOT STRUCK THROUGH. A line down the middle of a column
-            // covers the cells it is pointing at and reads as an artefact of the drawing; a box round
-            // the column says selected and leaves every cell visible.
+            // covers the cells it is pointing at; a box round it leaves every cell visible. `pad` is
+            // what keeps the box's own edge on screen when the first or last day is the one selected.
             if days.indices.contains(selected) {
-                let r = CGRect(x: x(selected) - 1, y: headH - 1, width: cw + 2,
+                let r = CGRect(x: x(selected) - pad, y: headH - 1, width: cw + pad * 2,
                                height: size.height - headH + 1)
                 ctx.stroke(Path(roundedRect: r, cornerRadius: 2), with: .color(.white),
                            style: StrokeStyle(lineWidth: 1.5))
             }
         }
         .frame(width: 118, height: 126)
+    }
+
+    /// A week boundary the reader can count from. Sunday is 1 in every Gregorian calendar here.
+    static func isSunday(_ date: String) -> Bool {
+        guard let d = dayFmt.date(from: date) else { return false }
+        return Calendar(identifier: .gregorian).component(.weekday, from: d) == 1
     }
 
     /// Surfline's own order, worst to best, for picking a day's best hour.
