@@ -87,11 +87,22 @@ struct EdgeDial: View {
                 // which is the very thing the fade exists to remove.
                 let rate = Self.ramp(day.hours) { $0.color }
                 let size = Self.ramp(day.hours) { $0.size_color }
+                // THE DAY'S BOUNDARY IS A GAP, and it is cut from the END of the day rather than
+                // centred on the mark. 6am still begins exactly at bottom centre — the clock position
+                // is the whole point of the ring — so the missing arc sits to the RIGHT of it, taken
+                // out of the last hour's tail. Ten points of it, converted from the border's own
+                // perimeter so it is the same size of gap on any watch.
+                let perimeter = 2 * (rect.width - 2 * radius) + 2 * (rect.height - 2 * radius)
+                    + 2 * .pi * radius
+                let boundary = min(0.15, 10 / max(1, perimeter))
                 let steps = 144
                 for k in 0..<steps {
                     let f0 = CGFloat(k) / CGFloat(steps), f1 = CGFloat(k + 1) / CGFloat(steps)
+                    if f0 >= 1 - boundary { continue }
+                    // The overrun that kills antialias seams must not spill INTO the gap, or the
+                    // last stroke paints over most of it and a ten-point boundary shows as a hairline.
                     let u = (Double(k) + 0.5) / Double(steps) * 12
-                    let to = min(1, f1 + 0.004)
+                    let to = min(1 - boundary, f1 + 0.004)
                     if let c = Self.colourAt(u, rate) {
                         ctx.stroke(ring.trimmedPath(from: f0, to: to), with: .color(c),
                                    style: StrokeStyle(lineWidth: width, lineCap: .butt))
@@ -110,16 +121,6 @@ struct EdgeDial: View {
                 // already there: 6am is where the day starts, so its numbers and the join are the same
                 // point. They go in the 30 degrees of clear arc either side instead, between the 6am
                 // figures and the 7am ones going one way and past the 5pm figures the other.
-                if let p = ring.trimmedPath(from: 0, to: 0.0005).currentPoint {
-                    let c = CGPoint(x: rect.midX, y: rect.midY)
-                    let v = CGPoint(x: p.x - c.x, y: p.y - c.y)
-                    var line = Path()
-                    // Stops OUTSIDE the numbers: the first hour's figures are directly beneath it,
-                    // and a line drawn through them is a strikethrough on a number.
-                    line.move(to: CGPoint(x: c.x + v.x * 1.06, y: c.y + v.y * 1.06))
-                    line.addLine(to: CGPoint(x: c.x + v.x * 0.94, y: c.y + v.y * 0.94))
-                    ctx.stroke(line, with: .color(.white), style: StrokeStyle(lineWidth: 2, lineCap: .butt))
-                }
                 for (f, name, tint) in [(CGFloat(0.042), "sunrise.fill", Color.orange),
                                         (CGFloat(0.958), "sunset.fill", Color(red: 0.55, green: 0.6, blue: 0.95))] {
                     guard let p = numberRing.trimmedPath(from: f, to: f + 0.0005).currentPoint else { continue }

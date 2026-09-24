@@ -45,7 +45,16 @@ is why it lands on the vertical with nothing contrived to put it there. An hour 
 its own mark to the next, so the twelfth runs 5pm to 6pm and the ring covers 6am to 6pm while only
 6am through 5pm carry marks.
 
-THE BOUNDARY IS A LINE, with a SUNRISE clockwise of it and a SUNSET anticlockwise — the two sides of
+THE BOUNDARY IS A GAP, cut from the END of the day rather than centred on the mark: 6am begins exactly
+at bottom centre, because the clock position is the point of the ring, so the missing arc sits to the
+RIGHT of it, taken out of the last hour's tail. Ten points of arc, converted from the border's own
+perimeter so it is the same gap on any size of watch.
+
+THE SEAM-KILLING OVERRUN MUST NOT SPILL INTO IT. Strokes overrun each other by a hair because abutting
+strokes on fractional pixels antialias into pale seams — and left unclamped the last stroke paints
+over the boundary, showing a ten-point gap as a hairline. It is clamped to the gap's own edge.
+
+Flanking it, a SUNRISE clockwise and a SUNSET anticlockwise — the two sides of
 the day in the one vocabulary that needs no key. Neither symbol sits ON the boundary and neither can:
 6am is where the day starts, so the first hour's own figures and the join are the same point. They go
 in the clear arc either side instead. The line stops outside the numbers, because drawn through them
