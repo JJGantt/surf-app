@@ -59,7 +59,7 @@ struct EdgeDial: View {
     let day: Live.Day
     var at: Double?
     var numbers: Bool
-    var inset: CGFloat = 3
+    var inset: CGFloat = 0
     var width: CGFloat = 4          // the rating band
     var sizeWidth: CGFloat = 4      // wave height
     var between: CGFloat = 1.5
@@ -67,7 +67,12 @@ struct EdgeDial: View {
     var body: some View {
         GeometryReader { geo in
             let rect = CGRect(origin: .zero, size: geo.size).insetBy(dx: inset + width / 2, dy: inset + width / 2)
-            let radius = min(rect.width, rect.height) * 0.30
+            // THE SCREEN'S CORNER RADIUS, AND IT IS A GUESS — there is no way to ask for it. The
+            // simulator's framebuffer is a flat rectangle with no mask, and `ContainerRelativeShape`
+            // resolves to a plain square-cornered rectangle in an app's root, measured rather than
+            // assumed. So this is judged on the device: too large and the band cuts the corner,
+            // pulling away from the bezel diagonally while hugging it along the straights.
+            let radius = min(rect.width, rect.height) * 0.24
             let ring = Self.border(rect, radius)
             let inner = rect.insetBy(dx: width / 2 + between + sizeWidth / 2, dy: width / 2 + between + sizeWidth / 2)
             let sizeRing = Self.border(inner, max(2, radius - width / 2 - between - sizeWidth / 2))

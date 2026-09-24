@@ -19,7 +19,13 @@ end up disagreeing about the same number.
 ## The watch is the day around the screen's edge, and it does not scroll
 
 The band follows the SCREEN'S OWN rounded-square border (`EdgeDial`), not a circle inscribed in it —
-a circle wastes the corners and stops short of the bezel. It is not a clock either: the whole way
+a circle wastes the corners and stops short of the bezel.
+
+ITS CORNER RADIUS IS A GUESS AND CAN ONLY BE JUDGED ON THE DEVICE. There is no way to ask for the
+screen's: the simulator's framebuffer is a flat rectangle with no mask, and `ContainerRelativeShape`
+resolves to a plain SQUARE-CORNERED rectangle in an app's root — measured by drawing it and reading
+the pixels back, not assumed. So the only test is the wrist: too large a radius and the band cuts the
+corner, pulling away from the bezel diagonally while still hugging it along the straights. It is not a clock either: the whole way
 round is 6am to 6pm, 6am at the bottom, up the left, noon at the top, down the right to 6pm, because
 that is the day worth surfing. The hub sends every day of the forecast (`days` in `surfLive`), each
 one those twelve hours, plus that day's water at local noon for the grid pane's plot. Outside in: the RATING band, the RAIN band, then two numbers an hour — the height that breaks, to a
