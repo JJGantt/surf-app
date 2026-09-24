@@ -13,17 +13,11 @@ import AppIntents
 
 // ---- the control ------------------------------------------------------------------------------
 
-struct OpenGnarcastIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Gnarcast"
-    static var openAppWhenRun = true
-    func perform() async throws -> some IntentResult { .result() }
-}
-
 @available(watchOS 26.0, *)
 struct GnarcastControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.jaredgantt.surf.watchkitapp.open") {
-            ControlWidgetButton(action: OpenGnarcastIntent()) {
+            ControlWidgetButton(action: OpenSurfIntent()) {
                 Label("Surf", systemImage: "water.waves")
             }
         }

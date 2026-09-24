@@ -205,6 +205,15 @@ Check it in the simulator rather than guessing, which takes about a minute:
   symbol and some text, and there is no way to put a gauge, a colour or a reading of ours in it. So
   the control opens the app and does nothing else. The two kinds that exist are a BUTTON and a TOGGLE;
   nothing else. A control cannot hold stored properties either, since the system instantiates it.
+
+  **ITS INTENT IS AN `OpenIntent` AND LIVES IN `Shared/`.** Both halves are load-bearing and each
+  fails the same silent way — a control that draws perfectly and does nothing at all when tapped.
+  A plain `AppIntent` with `openAppWhenRun` is not enough: a launching control takes an `OpenIntent`,
+  which opens a TARGET, so the target enum exists even with one case. And the intent has to compile
+  into the WATCH APP as well as the extension, because the system launches the app and runs
+  `perform()` there — `Shared/` is in both targets, which is why it lives there rather than beside
+  the widget. status-hub's `WatchWidgets/RecordIntent.swift` is the same pattern, added to its app
+  target by path for the same reason.
 - A **COMPLICATION** (`Widget` + `StaticConfiguration`) is a view of OURS on the watch face, so this
   is where a reading goes: the rating as colour with the height inside it, in the same grammar as the
   app's own ring. Four families — circular, corner, rectangular, inline.
