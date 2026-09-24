@@ -213,6 +213,13 @@ THE COMPLICATION REFRESHES HOURLY, and that is a budget rather than a preference
 complication a small number of background refreshes a day and refuses the rest, so asking every few
 minutes leaves the face STALER than asking hourly. The forecast moves on a six-hour capture anyway.
 
+THE EXTENSION NEEDS ITS OWN ASSET CATALOG, and this is not optional decoration. A widget extension
+resolves its accent colour from ITS OWN bundle, not the containing app's — Apple's template ships an
+`Assets.xcassets` with `AccentColor` and `WidgetBackground` for exactly that reason. Built without
+one, the extension carries no `Assets.car` at all, and a control's symbol can resolve to a tint that
+cannot be painted: the icon is not missing, it is invisible. `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`
+has to name it too, or the catalog ships and nothing points at it.
+
 Registering `com.jaredgantt.surf.watchkitapp.widgets` came first — an unregistered bundle id fails the
 archive with a missing-profile error that names the profile rather than the id.
 

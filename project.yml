@@ -94,5 +94,8 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         PRODUCT_BUNDLE_IDENTIFIER: com.jaredgantt.surf.watchkitapp.widgets
         PRODUCT_NAME: GnarcastWatchWidgets
+        # A widget extension resolves ITS OWN accent colour, not the app's. Apple's template ships
+        # this catalog and ours did not, so the extension built with no Assets.car at all.
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SKIP_INSTALL: YES
         TARGETED_DEVICE_FAMILY: "4"
