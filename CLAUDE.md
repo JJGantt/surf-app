@@ -56,6 +56,11 @@ at bottom centre, because the clock position is the point of the ring, so the mi
 RIGHT of it, taken out of the last hour's tail. Ten points of arc, converted from the border's own
 perimeter so it is the same gap on any size of watch.
 
+SQUARE WHERE THE DAY BEGINS, ROUNDED WHERE IT ENDS. 6am starts hard against bottom centre, so that
+edge is butt-capped; the far side of the gap is the only place the band simply stops, and a rounded
+end there reads as a deliberate gap rather than a band that has been cut off. Only the LAST stroke is
+capped — its own leading round cap is hidden under the stroke before it.
+
 THE SEAM-KILLING OVERRUN MUST NOT SPILL INTO IT. Strokes overrun each other by a hair because abutting
 strokes on fractional pixels antialias into pale seams — and left unclamped the last stroke paints
 over the boundary, showing a ten-point gap as a hairline. It is clamped to the gap's own edge.

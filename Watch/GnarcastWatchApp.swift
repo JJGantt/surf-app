@@ -108,13 +108,19 @@ struct EdgeDial: View {
                     // last stroke paints over most of it and a ten-point boundary shows as a hairline.
                     let u = (Double(k) + 0.5) / Double(steps) * 12
                     let to = min(1 - boundary, f1 + 0.004)
+                    // SQUARE WHERE THE DAY BEGINS, ROUNDED WHERE IT ENDS. 6am starts hard against
+                    // bottom centre, so that edge stays butt; the far side of the gap is the only
+                    // place the band simply stops, and a rounded end there reads as a deliberate gap
+                    // rather than as a band that has been cut off. Only the LAST stroke is capped —
+                    // its own leading round cap is hidden under the stroke before it.
+                    let cap: CGLineCap = f1 >= 1 - boundary ? .round : .butt
                     if let c = Self.colourAt(u, rate) {
                         ctx.stroke(ring.trimmedPath(from: f0, to: to), with: .color(c),
-                                   style: StrokeStyle(lineWidth: width, lineCap: .butt))
+                                   style: StrokeStyle(lineWidth: width, lineCap: cap))
                     }
                     if let c = Self.colourAt(u, size) {
                         ctx.stroke(sizeRing.trimmedPath(from: f0, to: to), with: .color(c),
-                                   style: StrokeStyle(lineWidth: sizeWidth, lineCap: .butt))
+                                   style: StrokeStyle(lineWidth: sizeWidth, lineCap: cap))
                     }
                 }
 
