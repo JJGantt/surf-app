@@ -683,6 +683,18 @@ struct LiveView: View {
                     Text("\(whole(w))°").font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Color(hex: s.water_color))
                 }
+                // THE DRIFT, and only here — it is a reading of what the water is doing NOW, so it
+                // has no place on a day that has not happened. The arrow is the direction from the
+                // water's edge looking out, and the figure is the figure: not a rating against a
+                // normal day, which is a judgement he can make himself once he has seen a few.
+                if let d = s.drift, let dir = s.drift_dir {
+                    HStack(spacing: 3) {
+                        Image(systemName: dir == "left" ? "arrow.left" : "arrow.right")
+                            .font(.system(size: 11, weight: .bold))
+                        Text(trim(d)).font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundStyle(.secondary)
+                }
             }
         }
         // NO SIDE PADDING OF ITS OWN. The pane it sits in is already the width of the clear middle;

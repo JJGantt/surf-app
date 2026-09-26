@@ -59,6 +59,11 @@ struct Live: Decodable {
         let wwd: String?
         let water_f: Double?
         let water_color: String?   // the wetsuit scale, cold blue to warm orange
+        /// How hard the water is pushing ALONG the beach right now, and which way, computed by the
+        /// hub from what the buoys are reading. `drift_dir` is `left` or `right` as seen from the
+        /// water's edge looking out — facing the ocean, north is to your left.
+        let drift: Double?
+        let drift_dir: String?
         let age_min: Int?
     }
     struct Buoy: Decodable, Identifiable {
