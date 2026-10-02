@@ -19,6 +19,11 @@ BUILD="$(date -u +%Y%m%d.%H%M)"
 OUT="$(mktemp -d)"
 
 security unlock-keychain -p "$(cat "$K/gnarcast-build-keychain.password")" "$KC"
+# On the keychain search list only while this runs: left there permanently, every ordinary build and
+# codesign on the Mac finds its identities, hits it locked, and asks for a password nobody knows.
+SEARCH_LIST=$(security list-keychains -d user | xargs -n1 | grep -v gnarcast-build | xargs)
+trap 'security list-keychains -d user -s $SEARCH_LIST' EXIT
+security list-keychains -d user -s "$KC" $SEARCH_LIST
 xcodegen generate >/dev/null
 
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K/AuthKey_$KEY_ID.p8"
