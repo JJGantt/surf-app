@@ -24,8 +24,6 @@ if [ -z "$DEV" ]; then
 fi
 [ -n "$DEV" ] || { echo "no connected iPhone; pass its devicectl identifier as \$1"; exit 1; }
 
-security unlock-keychain -p "$(cat "$K/gnarcast-build-keychain.password")" \
-  "$HOME/Library/Keychains/gnarcast-build.keychain-db"
 xcodegen generate >/dev/null
 
 echo "building $BUILD"

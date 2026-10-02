@@ -2,28 +2,20 @@
 # Build Gnarcast on THIS Mac and upload it to TestFlight — the first path. The GitHub workflow
 # (.github/workflows/testflight.yml) is the same build on a rented Mac, for when this one is away.
 #
-# Signs from a dedicated keychain (gnarcast-build) holding the app's distribution identity and the
-# account's development identity, unlocked here with its own password, so nothing prompts. Profiles
-# are fetched or made with the App Store Connect API key, not an Xcode account login.
+# Signs the way Xcode does, from the login keychain; profiles are fetched or made with the App Store
+# Connect API key, not an Xcode account login, and distribution signing happens in Apple's cloud.
 #
 # The build number is the time (YYYYMMDD.HHMM): TestFlight needs it higher than the last upload, and a
 # clock is monotonic across this Mac and the workflow, which uses the same format.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 K="$HOME/.appstoreconnect/private_keys"
-KC="$HOME/Library/Keychains/gnarcast-build.keychain-db"
 KEY_ID=P8Y337A8RC
 ISSUER=141a8ead-b829-4e58-b9ff-b8c95f8c4ed9
 TEAM=XMH4AVFC78
 BUILD="$(date -u +%Y%m%d.%H%M)"
 OUT="$(mktemp -d)"
 
-security unlock-keychain -p "$(cat "$K/gnarcast-build-keychain.password")" "$KC"
-# On the keychain search list only while this runs: left there permanently, every ordinary build and
-# codesign on the Mac finds its identities, hits it locked, and asks for a password nobody knows.
-SEARCH_LIST=$(security list-keychains -d user | xargs -n1 | grep -v gnarcast-build | xargs)
-trap 'security list-keychains -d user -s $SEARCH_LIST' EXIT
-security list-keychains -d user -s "$KC" $SEARCH_LIST
 xcodegen generate >/dev/null
 
 AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K/AuthKey_$KEY_ID.p8"

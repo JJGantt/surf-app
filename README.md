@@ -39,13 +39,8 @@ hub stays behind its password.
 ## Building
 
 **Build on the Mac first.** `tools/testflight.sh` archives, signs and uploads to TestFlight from
-Jared's Mac in about three minutes. It signs from a dedicated keychain,
-`~/Library/Keychains/gnarcast-build.keychain-db` (password in
-`~/.appstoreconnect/private_keys/gnarcast-build-keychain.password`), which holds the distribution and
-development identities and is unlocked by the script, so nothing prompts. The script puts it on the
-keychain search list for its own run and takes it off on exit: left on the list, every other build on
-the Mac finds it locked and raises a password dialog; profiles come from the App
-Store Connect API key, not an Xcode account login. The simulator build proves the plists, the icon and
+Jared's Mac in about three minutes. It signs as Xcode does, from the login keychain; profiles come
+from the App Store Connect API key, not an Xcode account login. The simulator build proves the plists, the icon and
 the watch embedding without signing anything:
 
     xcodegen generate
