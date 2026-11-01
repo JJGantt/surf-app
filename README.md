@@ -15,7 +15,7 @@ Its own product, so its own repo. It shares a backend with StatusHub rather than
 **Gnarcast** in App Store Connect (app id `6814910411`, SKU `surf-app`). Bundle ids
 `com.jaredgantt.surf` (iPhone) and `com.jaredgantt.surf.watchkitapp` (the watch app, shipped inside
 the iPhone app, which is why one record covers both). TestFlight group `internal_main` has access to
-every build and holds the tester account; a build uploaded with no group reaches no one. A tester
+every build and holds the developer's own tester account; a build uploaded with no group reaches no one. A tester
 goes in by CREATING the tester with the group in its relationships (`POST /v1/betaTesters`) —
 adding the account's existing tester record to the group is refused ("Tester(s) cannot be assigned").
 
