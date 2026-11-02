@@ -4,8 +4,7 @@
 
 The phone shows the hub's `/surf` page; the watch draws `/api/surf/live` natively. Both read the same
 payload, so a change to what that payload MEANS — a new field, a blended value replacing two, a label
-that moves — is one change across both, in the same commit. Shipping it to one surface and waiting to
-be told about the other is how they drift, and the person who notices is Jared.
+that moves — is one change across both, in the same commit. Shipping it to one surface first is how they drift.
 
 The same rule reaches the hub: the payload is built in `status-hub/server.js` (`surfLive`), so a field
 added there is added to `Shared/Hub.swift` and drawn in both places, or it is not added yet.
@@ -118,13 +117,13 @@ quietly shows a different day than the one asked for is worse than one showing a
 honestly.
 
 WHERE NOW IS COMES FROM THE HUB (`now_hour`), not the device: `Calendar.current` on the watch is the
-PHONE's timezone, so a spoke placed locally lands on the wrong hour the moment he travels.
+PHONE's timezone, so a spoke placed locally lands on the wrong hour the moment the phone travels.
 
 THE CROWN'S SPEED IS ITS RANGE. Bound straight to the day index, ten days is the crown's whole travel
 and a flick lands three days from the one you wanted; `perDay` gives each day four detents. The day
 label carries its DATE as well as its weekday (`FRI 9/25`), because Friday comes round twice in ten
 days and the span crosses a month. A long press hides the edge numbers for the bands alone; a tap refreshes and goes back to today —
-never changing the pane, which is where he put it.
+never changing the pane, which stays where the user put it.
 
 THE GESTURES' RESOLUTION ORDER IS LOAD-BEARING. A plain `.onTapGesture` beside `.onLongPressGesture`
 loses most FIRST taps: the long press claims the touch and waits out its duration before anything else
@@ -185,7 +184,7 @@ sea, which are never tomorrow's, and the top of the screen is under the bands an
 numbers. A clock hand pointing at no hour already says these are not the hours you are in.
 
 Water Lock is Apple's, not ours: an app can stop its own touches but not watchOS's gestures, so a
-half-measure inside the app was worse than the real thing (it cost double tap; Apple support 108413).
+half-measure inside the app is worse than the real thing (it costs double tap; Apple support 108413).
 
 Check it in the simulator rather than guessing, which takes about a minute:
 
@@ -229,7 +228,7 @@ one, the extension carries no `Assets.car` at all, and a control's symbol can re
 cannot be painted: the icon is not missing, it is invisible. `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`
 has to name it too, or the catalog ships and nothing points at it.
 
-Registering `com.jaredgantt.surf.watchkitapp.widgets` came first — an unregistered bundle id fails the
+`com.jaredgantt.surf.watchkitapp.widgets` must be registered before archiving — an unregistered bundle id fails the
 archive with a missing-profile error that names the profile rather than the id.
 
 ## Builds

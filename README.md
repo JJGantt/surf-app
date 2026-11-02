@@ -39,7 +39,7 @@ hub stays behind its password.
 ## Building
 
 **Build on the Mac first.** `tools/testflight.sh` archives, signs and uploads to TestFlight from
-Jared's Mac in about three minutes. It signs as Xcode does, from the login keychain; profiles come
+the owner's Mac in about three minutes. It signs as Xcode does, from the login keychain; profiles come
 from the App Store Connect API key, not an Xcode account login. The simulator build proves the plists, the icon and
 the watch embedding without signing anything:
 
@@ -48,7 +48,7 @@ the watch embedding without signing anything:
       -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
 **The backup** is `.github/workflows/testflight.yml` (manual dispatch, or an `ios-*` tag), the same
-build on a rented Mac for when his is away. GitHub bills macOS minutes at ten times Linux's against
+build on a rented Mac for when that one is away. GitHub bills macOS minutes at ten times Linux's against
 the free allowance. It signs with this repo's OWN distribution certificate (secrets `IOS_DIST_P12` /
 `IOS_DIST_P12_PASSWORD`, local copy `~/.appstoreconnect/private_keys/gnarcast-distribution.p12`,
 expires 2027-09-22) and the account's one development certificate (`IOS_DEV_P12`, shared with

@@ -155,7 +155,7 @@ struct Live: Decodable {
     let days: [Day]
     /// Where now falls in the ring, on the BREAK's clock rather than the device's: `Calendar.current`
     /// is the PHONE's timezone, so a spoke placed from the device lands on the wrong hour the moment
-    /// he travels.
+    /// the phone travels.
     let now_hour: Double?
     let generated_at: String?
     let sea: Sea?

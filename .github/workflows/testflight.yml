@@ -1,11 +1,11 @@
 # Build Gnarcast (the iPhone app, with the watch app inside it) and upload it to TestFlight, from a
-# rented Mac. THE BACKUP: tools/testflight.sh does the same build on Jared's Mac and is the first path;
+# rented Mac. THE BACKUP: tools/testflight.sh does the same build on the owner's Mac and is the first path;
 # this is for when that Mac is away. Adapted from status-hub's ios-testflight.yml, whose comments give
 # the reasons behind each step. The build number is the UTC time (YYYYMMDD.HHMM), the same as the
 # local script's, so a build from either is always higher than the last one from both.
 #
 # This is the only part of the stack that genuinely cannot run on the Pi — Xcode is macOS-only — so
-# GitHub rents a real Mac for it. Nothing about it needs Jared's laptop.
+# GitHub rents a real Mac for it. Nothing about it needs the owner's laptop.
 #
 # TRIGGERED DELIBERATELY, never on push. macOS runners bill at a 10x multiplier, which puts a free
 # allowance at roughly 16-25 builds a month; auto-building every merge would spend that in days on

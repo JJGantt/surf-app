@@ -347,7 +347,7 @@ struct LiveView: View {
                   abs(g.translation.width) > 28 else { return }
             pane = min(Self.panes - 1, max(0, pane + (g.translation.width < 0 ? 1 : -1)))
         })
-        // Back to today, and never a change of pane: the pane is where he put it.
+        // Back to today, and never a change of pane: the pane stays where the user put it.
         .gesture(ExclusiveGesture(
             TapGesture().onEnded { today(); model.refresh() },
             LongPressGesture(minimumDuration: 0.6).onEnded { _ in showNumbers.toggle() }))
@@ -686,7 +686,7 @@ struct LiveView: View {
                 // THE DRIFT, and only here — it is a reading of what the water is doing NOW, so it
                 // has no place on a day that has not happened. The arrow is the direction from the
                 // water's edge looking out, and the figure is the figure: not a rating against a
-                // normal day, which is a judgement he can make himself once he has seen a few.
+                // normal day, which is a judgement the user can make once they have seen a few.
                 if let d = s.drift, let dir = s.drift_dir {
                     HStack(spacing: 3) {
                         Image(systemName: dir == "left" ? "arrow.left" : "arrow.right")
