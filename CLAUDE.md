@@ -241,12 +241,15 @@ TestFlight has a DAILY UPLOAD CAP — about 21 builds in a rolling day here, and
 `Upload limit reached. The upload limit for your application has been reached.` Verify layout in the
 simulator and batch changes into one upload rather than shipping a build per adjustment.
 
-`tools/devinstall.sh` installs straight onto the phone over USB, no TestFlight. Three things have to
+`tools/devinstall.sh` installs straight onto the phone over USB, no TestFlight. It picks the connected
+iPhone itself (skipping old pairings devicectl still lists as `unavailable`) and builds for that
+device with `-allowProvisioningDeviceRegistration`, so a replacement handset, which is a new UDID
+however identical it looks, is registered in the developer account by the build. Three things have to
 be true once per device and each fails silently in its own way:
 
-- **The device is registered in the developer account.** A replacement handset is a NEW udid however
-  identical it looks, and every profile refuses it until it is added. The error names the profile, not
-  the device, so it reads as a signing problem.
+- **The WATCH is registered in the developer account.** The build registers only its destination, the
+  phone. An unregistered watch is refused by every profile, and the error names the profile, not the
+  device, so it reads as a signing problem.
 - **Developer Mode is on**, on the phone AND on the watch, and the iOS device support files for its
   OS version are downloaded (Xcode offers this on first connect; they run to gigabytes).
 - **THE BUILD NUMBER MUST EXCEED WHAT TESTFLIGHT LAST PUT ON THE WATCH.** `project.yml` carries
