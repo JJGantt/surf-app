@@ -48,8 +48,7 @@ the watch embedding without signing anything:
       -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
 **The backup** is `.github/workflows/testflight.yml` (manual dispatch, or an `ios-*` tag), the same
-build on a rented Mac for when that one is away. GitHub bills macOS minutes at ten times Linux's against
-the free allowance. It signs with this repo's OWN distribution certificate (secrets `IOS_DIST_P12` /
+build on a rented Mac for when that one is away. It signs with the team's distribution certificate, also used by Watchset's and StrokeSaver's workflows (secrets `IOS_DIST_P12` /
 `IOS_DIST_P12_PASSWORD`, expires 2027-09-22) and the account's one development certificate (`IOS_DEV_P12`, shared with
 status-hub): with no development identity in the runner's keychain, automatic signing mints a new one
 every run and the account fills up. `ASC_KEY_P8` is the App Store Connect API key.
